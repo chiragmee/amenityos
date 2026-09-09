@@ -17,3 +17,5 @@ frontend/.pnpm-debug.log*
 
 # unexplained large export, not part of the tracked source
 AmenityOS.html
+.vercel
+.env*
