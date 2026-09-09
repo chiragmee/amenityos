@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#f4f4f1;color:#1b1b19;font-family:'Instrument Sans',-apple-system,'Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:#0f5c52;text-decoration:none}
+  a:hover{color:#0b463e}
+  button{font-family:inherit}
+  input,textarea,select{font-family:inherit}
+  ::selection{background:#cfe3df}
+  @keyframes wf{0%,100%{transform:scaleY(0.25)}50%{transform:scaleY(1)}}
+  @keyframes pulseRing{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.45);opacity:0}}
+  @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pop{0%{transform:scale(.85);opacity:0}60%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#dcdcd6;border-radius:8px;border:3px solid #f4f4f1}
+</style>
+</helmet>
+
+<div style="display:flex;min-height:100vh;background:#f4f4f1">
+
+  <sc-if value="{{ desktop }}" hint-placeholder-val="{{ true }}">
+  <aside style="width:252px;flex:0 0 252px;background:#fbfbf9;border-right:1px solid #e4e4de;display:flex;flex-direction:column;padding:22px 16px;position:sticky;top:0;height:100vh">
+    <div style="display:flex;align-items:center;gap:10px;padding:4px 8px 22px">
+      <div style="width:24px;height:24px;border-radius:6px;background:#0f5c52;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600">A</div>
+      <div style="font-size:15px;font-weight:600;letter-spacing:-0.2px">AmenityOS</div>
+    </div>
+
+    <nav style="display:flex;flex-direction:column;gap:2px">
+      <sc-for list="{{ nav }}" as="item" hint-placeholder-count="4">
+        <sc-if value="{{ item.on }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ item.go }}" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border:0;border-radius:7px;background:#eceee9;color:#14322d;font-size:13.5px;font-weight:500;cursor:pointer">
+            <span style="width:6px;height:6px;border-radius:99px;background:#0f5c52"></span>{{ item.label }}
+          </button>
+        </sc-if>
+        <sc-if value="{{ item.off }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ item.go }}" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border:0;border-radius:7px;background:transparent;color:#5f5f58;font-size:13.5px;font-weight:400;cursor:pointer;transition:background .14s,color .14s" style-hover="background:#f1f1ec;color:#1b1b19">
+            <span style="width:6px;height:6px;border-radius:99px;background:#d3d3cb"></span>{{ item.label }}
+          </button>
+        </sc-if>
+        <sc-if value="{{ item.rule }}" hint-placeholder-val="{{ false }}">
+          <div style="height:1px;background:#e7e7e1;margin:10px 10px"></div>
+        </sc-if>
+      </sc-for>
+    </nav>
+
+    <div style="flex:1"></div>
+
+    <div style="border-top:1px solid #e7e7e1;padding-top:14px;display:flex;align-items:center;gap:10px">
+      <div style="width:32px;height:32px;border-radius:99px;background:#e6e9e5;color:#14322d;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600">C</div>
+      <div style="min-width:0">
+        <div style="font-size:13px;font-weight:500">Chirag</div>
+        <div style="font-size:11.5px;color:#8a8a82">Google</div>
+      </div>
+      <div style="flex:1"></div>
+      <button onClick="{{ goProfile }}" style="border:1px solid #e4e4de;background:#fff;color:#5f5f58;border-radius:6px;padding:5px 8px;font-size:11.5px;cursor:pointer" style-hover="border-color:#c9c9c1;color:#1b1b19">Profile</button>
+    </div>
+  </aside>
+  </sc-if>
+
+  <main style="flex:1;min-width:0;display:flex;flex-direction:column">
+
+    <header style="display:flex;align-items:center;gap:16px;padding:16px 34px;border-bottom:1px solid #e7e7e1;background:rgba(250,250,248,.86);backdrop-filter:blur(6px);position:sticky;top:0;z-index:20">
+      <div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#9a9a92;font-family:'IBM Plex Mono',monospace">{{ crumb }}</div>
+      <div style="flex:1"></div>
+      <div style="display:flex;align-items:center;gap:7px;padding:5px 10px;border:1px solid #e4e4de;border-radius:99px;background:#fff;font-size:12px;color:#5f5f58">
+        <span style="width:6px;height:6px;border-radius:99px;background:#0f5c52"></span>{{ creditLabel }}
+      </div>
+      <div style="display:flex;border:1px solid #e4e4de;border-radius:99px;background:#fff;padding:3px">
+        <sc-for list="{{ devices }}" as="d" hint-placeholder-count="2">
+          <sc-if value="{{ d.on }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ d.go }}" style="border:0;background:#1b1b19;color:#fff;border-radius:99px;padding:5px 12px;font-size:11.5px;cursor:pointer">{{ d.label }}</button>
+          </sc-if>
+          <sc-if value="{{ d.off }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ d.go }}" style="border:0;background:transparent;color:#7a7a72;border-radius:99px;padding:5px 12px;font-size:11.5px;cursor:pointer" style-hover="color:#1b1b19">{{ d.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ desktop }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;padding:38px 34px 70px">
+    <div style="max-width:1080px;margin:0 auto">
+
+      <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+      <section data-screen-label="Home" style="animation:rise .28s ease both">
+        <h1 style="margin:0;font-size:32px;font-weight:600;letter-spacing:-0.7px">Good afternoon, Chirag</h1>
+        <p style="margin:8px 0 0;font-size:16px;color:#6f6f68">What would you like to book today?</p>
+
+        <div style="margin-top:30px;background:#fff;border:1px solid #e4e4de;border-radius:14px;box-shadow:0 1px 2px rgba(27,27,25,.04);overflow:hidden">
+          <div style="padding:52px 40px 40px;display:flex;flex-direction:column;align-items:center;text-align:center;min-height:330px;justify-content:center">
+
+            <sc-if value="{{ vIdle }}" hint-placeholder-val="{{ true }}">
+              <div style="position:relative;display:flex;align-items:center;justify-content:center">
+                <div style="position:absolute;width:104px;height:104px;border-radius:99px;border:1px solid #cfe3df;animation:pulseRing 2.6s ease-out infinite"></div>
+                <button onClick="{{ startVoice }}" style="position:relative;width:104px;height:104px;border-radius:99px;border:1px solid #0f5c52;background:#0f5c52;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;box-shadow:0 6px 18px rgba(15,92,82,.22);transition:transform .16s,box-shadow .16s" style-hover="transform:translateY(-2px);box-shadow:0 10px 26px rgba(15,92,82,.28)" style-active="transform:scale(.97)">
+                  <span style="font-size:22px;line-height:1">◉</span>
+                  <span style="font-size:11px;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace">HOLD</span>
+                </button>
+              </div>
+              <div style="margin-top:22px;font-size:19px;font-weight:500;letter-spacing:-0.2px">{{ idleLabel }}</div>
+              <div style="margin-top:6px;font-size:13.5px;color:#8a8a82">Just ask. We'll handle the booking.</div>
+            </sc-if>
+
+            <sc-if value="{{ vListen }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;justify-content:center;gap:3px;height:82px">
+                <sc-for list="{{ bars }}" as="b" hint-placeholder-count="24">
+                  <div style="width:4px;border-radius:99px;background:#0f5c52;height:{{ b.h }}px;animation:wf {{ b.s }}s ease-in-out infinite;animation-delay:{{ b.d }}s"></div>
+                </sc-for>
+              </div>
+              <div style="margin-top:22px;font-size:19px;font-weight:500;letter-spacing:-0.2px">Listening…</div>
+              <div style="margin-top:6px;font-size:13.5px;color:#8a8a82;font-family:'IBM Plex Mono',monospace">release to send</div>
+            </sc-if>
+
+            <sc-if value="{{ vAfter }}" hint-placeholder-val="{{ false }}">
+              <div style="width:100%;max-width:620px;text-align:left">
+                <div style="font-size:11px;letter-spacing:.08em;color:#9a9a92;font-family:'IBM Plex Mono',monospace">YOU SAID</div>
+                <div style="margin-top:8px;font-size:22px;font-weight:500;letter-spacing:-0.3px;line-height:1.35;animation:rise .24s ease both">“{{ transcript }}”</div>
+
+                <div style="margin-top:26px;display:flex;flex-direction:column;gap:2px">
+                  <sc-for list="{{ steps }}" as="s" hint-placeholder-count="4">
+                    <sc-if value="{{ s.done }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex;align-items:center;gap:11px;padding:9px 0;font-size:14px;color:#4a4a44">
+                        <span style="width:18px;height:18px;border-radius:99px;background:#0f5c52;color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center">✓</span>{{ s.label }}
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ s.active }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex;align-items:center;gap:11px;padding:9px 0;font-size:14px;color:#1b1b19;font-weight:500">
+                        <span style="width:18px;height:18px;border-radius:99px;border:2px solid #d7ded9;border-top-color:#0f5c52;animation:spin .7s linear infinite"></span>{{ s.label }}
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ s.todo }}" hint-placeholder-val="{{ true }}">
+                      <div style="display:flex;align-items:center;gap:11px;padding:9px 0;font-size:14px;color:#b4b4ac">
+                        <span style="width:18px;height:18px;border-radius:99px;border:1px solid #e4e4de"></span>{{ s.label }}
+                      </div>
+                    </sc-if>
+                  </sc-for>
+                </div>
+
+                <sc-if value="{{ vDone }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:22px;display:flex;align-items:center;gap:12px;animation:pop .3s ease both">
+                    <span style="width:30px;height:30px;border-radius:99px;background:#0f5c52;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px">✓</span>
+                    <div style="font-size:20px;font-weight:600;letter-spacing:-0.3px">Your booking is confirmed.</div>
+                    <div style="flex:1"></div>
+                    <button onClick="{{ resetVoice }}" style="border:1px solid #e4e4de;background:#fff;color:#5f5f58;border-radius:7px;padding:8px 12px;font-size:12.5px;cursor:pointer" style-hover="border-color:#c9c9c1;color:#1b1b19">Ask again</button>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="border-top:1px solid #eeeee9;background:#fafaf8;padding:14px 18px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:12.5px;color:#9a9a92;white-space:nowrap">Or type your request…</span>
+            <input value="{{ typed }}" onChange="{{ onType }}" onKeyDown="{{ onKey }}" placeholder="Book Sapphire tomorrow at 10 AM for 8 people" style="flex:1;min-width:0;border:1px solid #e4e4de;border-radius:8px;padding:10px 12px;font-size:13.5px;background:#fff;color:#1b1b19;outline:none" style-focus="border-color:#0f5c52"/>
+            <button onClick="{{ sendTyped }}" style="border:0;background:#1b1b19;color:#fff;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer" style-hover="background:#0f5c52">Send</button>
+          </div>
+        </div>
+
+        <sc-if value="{{ vDone }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:22px;background:#fff;border:1px solid #e4e4de;border-radius:14px;padding:26px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;animation:rise .3s ease both;box-shadow:0 1px 2px rgba(27,27,25,.04)">
+            <div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:11px;letter-spacing:.08em;font-family:'IBM Plex Mono',monospace;color:#0f5c52;border:1px solid #cfe3df;background:#f2f7f5;border-radius:99px;padding:3px 9px">CONFIRMED</span>
+                <span style="font-size:11.5px;color:#9a9a92;font-family:'IBM Plex Mono',monospace">AMN-20481</span>
+              </div>
+              <h3 style="margin:14px 0 0;font-size:24px;font-weight:600;letter-spacing:-0.5px">Emerald Meeting Room</h3>
+              <div style="margin-top:4px;font-size:13.5px;color:#8a8a82">Tower A · Floor 8</div>
+              <div style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:18px;border-top:1px solid #eeeee9;padding-top:18px">
+                <div>
+                  <div style="font-size:11px;letter-spacing:.06em;color:#9a9a92;font-family:'IBM Plex Mono',monospace">WHEN</div>
+                  <div style="margin-top:5px;font-size:14px;font-weight:500">Today</div>
+                  <div style="font-size:14px;color:#4a4a44">3:00 PM – 4:00 PM</div>
+                </div>
+                <div>
+                  <div style="font-size:11px;letter-spacing:.06em;color:#9a9a92;font-family:'IBM Plex Mono',monospace">ATTENDEES</div>
+                  <div style="margin-top:5px;font-size:14px;font-weight:500">5 people</div>
+                </div>
+                <div>
+                  <div style="font-size:11px;letter-spacing:.06em;color:#9a9a92;font-family:'IBM Plex Mono',monospace">COST</div>
+                  <div style="margin-top:5px;font-size:14px;font-weight:500">Free</div>
+                </div>
+              </div>
+              <div style="margin-top:22px;display:flex;flex-wrap:wrap;gap:8px">
+                <button onClick="{{ goPass }}" style="border:0;background:#1b1b19;color:#fff;border-radius:8px;padding:10px 15px;font-size:13px;font-weight:500;cursor:pointer" style-hover="background:#0f5c52">View booking</button>
+                <button style="border:1px solid #e4e4de;background:#fff;color:#3f3f3a;border-radius:8px;padding:10px 15px;font-size:13px;cursor:pointer" style-hover="border-color:#c9c9c1">Add to calendar</button>
+                <button onClick="{{ resetVoice }}" style="border:1px solid #f0dede;background:#fff;color:#9c4a44;border-radius:8px;padding:10px 15px;font-size:13px;cursor:pointer" style-hover="background:#fdf5f4">Cancel booking</button>
+              </div>
+            </div>
+            <div style="width:196px;text-align:center;border-left:1px solid #eeeee9;padding-left:26px">
+              <img src="{{ qr }}" alt="Access QR code" style="width:150px;height:150px;border:1px solid #e7e7e1;border-radius:8px;animation:pop .34s ease both"/>
+              <div style="margin-top:12px;font-size:11.5px;color:#8a8a82;line-height:1.5">Show this QR code at the amenity entrance.</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="margin-top:44px;display:flex;align-items:baseline;gap:12px">
+          <h2 style="margin:0;font-size:17px;font-weight:600;letter-spacing:-0.3px">Upcoming bookings</h2>
+          <button onClick="{{ goBookings }}" style="border:0;background:transparent;color:#0f5c52;font-size:12.5px;cursor:pointer;padding:0">View all</button>
+        </div>
+        <div style="margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px">
+          <sc-for list="{{ upcoming }}" as="b" hint-placeholder-count="3">
+            <div style="background:#fff;border:1px solid #e4e4de;border-radius:12px;padding:18px;transition:border-color .16s,transform .16s" style-hover="border-color:#cfd6d2;transform:translateY(-1px)">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div style="font-size:15px;font-weight:600;letter-spacing:-0.2px">{{ b.name }}</div>
+                <span style="font-size:10.5px;letter-spacing:.07em;font-family:'IBM Plex Mono',monospace;color:#0f5c52;border:1px solid #cfe3df;background:#f2f7f5;border-radius:99px;padding:3px 8px">CONFIRMED</span>
+              </div>
+              <div style="margin-top:9px;font-size:13px;color:#4a4a44">{{ b.when }}</div>
+              <div style="margin-top:16px;padding-top:12px;border-top:1px solid #f0f0eb;display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:12.5px;color:#8a8a82">{{ b.meta }}</span>
+                <button onClick="{{ goPass }}" style="border:1px solid #e4e4de;background:#fff;color:#3f3f3a;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer" style-hover="border-color:#c9c9c1">Access pass</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+      </sc-if>
+
+      <sc-if value="{{ isAssistant }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="AI Assistant" style="animation:rise .28s ease both">
+        <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.6px">AI Assistant</h1>
+        <p style="margin:8px 0 0;font-size:15px;color:#6f6f68">Every request is resolved against live availability, amenity rules, eligibility and credits.</p>
+
+        <div style="margin-top:22px;display:flex;flex-wrap:wrap;gap:8px">
+          <sc-for list="{{ scenarios }}" as="s" hint-placeholder-count="4">
+            <sc-if value="{{ s.on }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ s.go }}" style="border:1px solid #0f5c52;background:#0f5c52;color:#fff;border-radius:99px;padding:8px 14px;font-size:12.5px;font-weight:500;cursor:pointer">{{ s.label }}</button>
+            </sc-if>
+            <sc-if value="{{ s.off }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ s.go }}" style="border:1px solid #e4e4de;background:#fff;color:#5f5f58;border-radius:99px;padding:8px 14px;font-size:12.5px;cursor:pointer" style-hover="border-color:#c9c9c1;color:#1b1b19">{{ s.label }}</button>
+            </sc-if>
+          </sc-for>
+        </div>
+
+        <div style="margin-top:20px;background:#fff;border:1px solid #e4e4de;border-radius:14px;padding:28px;box-shadow:0 1px 2px rgba(27,27,25,.04)">
+          <div style="display:flex;justify-content:flex-end">
+            <div style="max-width:70%;background:#1b1b19;color:#fff;border-radius:12px 12px 3px 12px;padding:13px 16px;font-size:14.5px;line-height:1.45">{{ scn.user }}</div>
+          </div>
+
+          <div style="margin-top:18px;display:flex;gap:12px;animation:rise .26s ease both">
+            <div style="width:26px;height:26px;flex:0 0 26px;border-radius:7px;background:#0f5c52;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">A</div>
+            <div style="min-width:0;flex:1">
+              <div style="font-size:15px;line-height:1.55;color:#1b1b19;white-space:pre-line">{{ scn.agent }}</div>
+
+              <sc-if value="{{ scn.hasOptions }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:16px;border:1px solid #e7e7e1;border-radius:10px;overflow:hidden">
+                  <div style="padding:9px 14px;background:#fafaf8;border-bottom:1px solid #eeeee9;font-size:11px;letter-spacing:.08em;font-family:'IBM Plex Mono',monospace;color:#9a9a92">{{ scn.optionsTitle }}</div>
+                  <sc-for list="{{ scn.options }}" as="o" hint-placeholder-count="3">
+                    <div style="display:flex;align-items:center;gap:14px;padding:13px 14px;border-bottom:1px solid #f2f2ed">
+                      <div style="min-width:0;flex:1">
+                        <div style="font-size:14px;font-weight:500">{{ o.name }}</div>
+                        <div style="margin-top:3px;font-size:12.5px;color:#8a8a82;font-family:'IBM Plex Mono',monospace">{{ o.detail }}</div>
+                      </div>
+                      <span style="font-size:11px;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;color:#0f5c52">{{ o.tag }}</span>
+                      <button onClick="{{ o.pick }}" style="border:1px solid #e4e4de;background:#fff;color:#1b1b19;border-radius:7px;padding:7px 12px;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="border-color:#0f5c52;color:#0f5c52">Book this</button>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ scn.hasActions }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px">
+                  <sc-for list="{{ scn.actions }}" as="a" hint-placeholder-count="2">
+                    <sc-if value="{{ a.primary }}" hint-placeholder-val="{{ true }}">
+                      <button onClick="{{ a.run }}" style="border:0;background:#0f5c52;color:#fff;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer" style-hover="background:#0b463e">{{ a.label }}</button>
+                    </sc-if>
+                    <sc-if value="{{ a.secondary }}" hint-placeholder-val="{{ false }}">
+                      <button onClick="{{ a.run }}" style="border:1px solid #e4e4de;background:#fff;color:#3f3f3a;border-radius:8px;padding:10px 16px;font-size:13px;cursor:pointer" style-hover="border-color:#c9c9c1">{{ a.label }}</button>
+                    </sc-if>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ scn.hasResult }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:18px;border:1px solid #cfe3df;background:#f5faf8;border-radius:10px;padding:16px 18px;animation:rise .26s ease both">
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <span style="width:22px;height:22px;border-radius:99px;background:#0f5c52;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px">✓</span>
+                    <div style="font-size:15px;font-weight:600;letter-spacing:-0.2px">{{ scn.resultTitle }}</div>
+                  </div>
+                  <div style="margin-top:8px;font-size:13.5px;color:#3f5c56;line-height:1.55;padding-left:32px;white-space:pre-line">{{ scn.resultBody }}</div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ scn.hasBlock }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:18px;border:1px solid #f0dede;background:#fdf7f6;border-radius:10px;padding:16px 18px">
+                  <div style="font-size:14.5px;font-weight:600;color:#8f3f39">{{ scn.blockTitle }}</div>
+                  <div style="margin-top:6px;font-size:13.5px;color:#6f4f4c;line-height:1.55">{{ scn.blockBody }}</div>
+                </div>
+              </sc-if>
+
+              <div style="margin-top:16px;font-size:11.5px;color:#a8a8a0;font-family:'IBM Plex Mono',monospace">{{ scn.trace }}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+      </sc-if>
+
+      <sc-if value="{{ isAmenities }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Amenities" style="animation:rise .28s ease both">
+        <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.6px">Explore amenities</h1>
+        <p style="margin:8px 0 0;font-size:15px;color:#6f6f68">7 amenities across Tower A. Availability shown for today.</p>
+        <div style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(292px,1fr));gap:16px">
+          <sc-for list="{{ amenities }}" as="a" hint-placeholder-count="6">
+            <div style="background:#fff;border:1px solid #e4e4de;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .16s,transform .16s,box-shadow .16s" style-hover="border-color:#cfd6d2;transform:translateY(-2px);box-shadow:0 8px 20px rgba(27,27,25,.05)">
+              <div style="height:132px;background:repeating-linear-gradient(135deg,#f0f0ea 0 8px,#e8e8e1 8px 16px);display:flex;align-items:flex-end;justify-content:space-between;padding:10px 12px">
+                <span style="font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:#9a9a92;background:rgba(255,255,255,.8);border-radius:4px;padding:3px 6px">{{ a.shot }}</span>
+                <span style="font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:#3f3f3a;background:rgba(255,255,255,.9);border-radius:4px;padding:3px 6px">{{ a.avail }}</span>
+              </div>
+              <div style="padding:16px 18px 18px;display:flex;flex-direction:column;flex:1">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                  <div style="font-size:15.5px;font-weight:600;letter-spacing:-0.2px">{{ a.name }}</div>
+                  <span style="font-size:11px;letter-spacing:.05em;font-family:'IBM Plex Mono',monospace;color:#5f5f58;border:1px solid #e7e7e1;border-radius:99px;padding:3px 8px;white-space:nowrap">{{ a.price }}</span>
+                </div>
+                <div style="margin-top:5px;font-size:12.5px;color:#8a8a82">{{ a.place }}</div>
+                <div style="margin-top:12px;font-size:12.5px;color:#4a4a44">Capacity {{ a.cap }}</div>
+                <div style="flex:1"></div>
+                <button onClick="{{ a.book }}" style="margin-top:16px;border:1px solid #e4e4de;background:#fff;color:#1b1b19;border-radius:8px;padding:9px 12px;font-size:13px;font-weight:500;cursor:pointer;width:100%" style-hover="background:#1b1b19;color:#fff;border-color:#1b1b19">Book</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+      </sc-if>
+
+      <sc-if value="{{ isBookings }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="My Bookings" style="animation:rise .28s ease both">
+        <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.6px">My bookings</h1>
+        <p style="margin:8px 0 0;font-size:15px;color:#6f6f68">3 upcoming · 2 past</p>
+        <div style="margin-top:24px;background:#fff;border:1px solid #e4e4de;border-radius:12px;overflow:hidden">
+          <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.6fr) minmax(0,1fr) auto;gap:14px;padding:11px 20px;background:#fafaf8;border-bottom:1px solid #eeeee9;font-size:11px;letter-spacing:.07em;font-family:'IBM Plex Mono',monospace;color:#9a9a92">
+            <div>AMENITY</div><div>WHEN</div><div>COST</div><div>STATUS</div>
+          </div>
+          <sc-for list="{{ allBookings }}" as="b" hint-placeholder-count="5">
+            <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.6fr) minmax(0,1fr) auto;gap:14px;padding:16px 20px;border-bottom:1px solid #f2f2ed;align-items:center" style-hover="background:#fcfcfa">
+              <div>
+                <div style="font-size:14.5px;font-weight:500">{{ b.name }}</div>
+                <div style="margin-top:3px;font-size:12px;color:#9a9a92">{{ b.place }} · {{ b.id }}</div>
+              </div>
+              <div style="font-size:13.5px;color:#4a4a44">{{ b.when }}</div>
+              <div style="font-size:13.5px;color:#4a4a44">{{ b.meta }}</div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:10.5px;letter-spacing:.07em;font-family:'IBM Plex Mono',monospace;color:{{ b.tone }};border:1px solid {{ b.line }};border-radius:99px;padding:3px 8px">{{ b.status }}</span>
+                <button onClick="{{ goPass }}" style="border:1px solid #e4e4de;background:#fff;color:#3f3f3a;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer" style-hover="border-color:#c9c9c1">Pass</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+      </sc-if>
+
+      <sc-if value="{{ isCredits }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Credits" style="animation:rise .28s ease both">
+        <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.6px">Credits</h1>
+        <p style="margin:8px 0 0;font-size:15px;color:#6f6f68">Monthly allowance resets on the 1st.</p>
+        <div style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+          <div style="background:#fff;border:1px solid #e4e4de;border-radius:12px;padding:22px">
+            <div style="font-size:11px;letter-spacing:.07em;font-family:'IBM Plex Mono',monospace;color:#9a9a92">REMAINING</div>
+            <div style="margin-top:10px;font-size:38px;font-weight:600;letter-spacing:-1.2px">{{ credits }}</div>
+            <div style="margin-top:12px;height:5px;border-radius:99px;background:#eeeee9;overflow:hidden">
+              <div style="height:100%;background:#0f5c52;border-radius:99px;width:{{ creditPct }}%;transition:width .5s ease"></div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #e4e4de;border-radius:12px;padding:22px">
+            <div style="font-size:11px;letter-spacing:.07em;font-family:'IBM Plex Mono',monospace;color:#9a9a92">MONTHLY ALLOWANCE</div>
+            <div style="margin-top:10px;font-size:38px;font-weight:600;letter-spacing:-1.2px">40</div>
+            <div style="margin-top:12px;font-size:12.5px;color:#8a8a82">Granted by Google workplace plan</div>
+          </div>
+          <div style="background:#fff;border:1px solid #e4e4de;border-radius:12px;padding:22px">
+            <div style="font-size:11px;letter-spacing:.07em;font-family:'IBM Plex Mono',monospace;color:#9a9a92">SPENT THIS MONTH</div>
+            <div style="margin-top:10px;font-size:38px;font-weight:600;letter-spacing:-1.2px">{{ spent }}</div>
+            <div style="margin-top:12px;font-size:12.5px;color:#8a8a82">Across 2 paid amenities</div>
+          </div>
+        </div>
+        <h2 style="margin:34px 0 0;font-size:17px;font-weight:600;letter-spacing:-0.3px">Activity</h2>
+        <div style="margin-top:14px;background:#fff;border:1px solid #e4e4de;border-radius:12px;overflow:hidden">
+          <sc-for list="{{ ledger }}" as="l" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:14px;padding:15px 20px;border-bottom:1px solid #f2f2ed">
+              <div style="min-width:0;flex:1">
+                <div style="font-size:14px;font-weight:500">{{ l.name }}</div>
+                <div style="margin-top:3px;font-size:12px;color:#9a9a92;font-family:'IBM Plex Mono',monospace">{{ l.date }}</div>
+              </div>
+              <div style="font-size:14px;font-weight:500;font-family:'IBM Plex Mono',monospace;color:{{ l.tone }}">{{ l.amount }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+      </sc-if>
+
+      <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Admin" style="animation:rise .28s ease both">
+
+        <sc-if value="{{ adminList }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap">
+            <div>
+              <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.6px">Amenities</h1>
+              <p style="margin:8px 0 0;font-size:15px;color:#6f6f68">7 configured · 6 active · 1 inactive · Tower A</p>
+            </div>
+            <div style="flex:1"></div>
+            <button onClick="{{ newAmenity }}" style="border:0;background:#1b1b19;color:#fff;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer" style-hover="background:#0f5c52">New amenity</button>
+          </div>
+
+          <div style="margin-top:24px;background:#fff;border:1px solid #e4e4de;border-radius:12px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.5fr) auto;gap:14px;padding:11px 20px;background:#fafaf8;border-bottom:1px solid #eeeee9;font-size:11px;letter-spacing:.07em;font-family:'IBM Plex Mono',monospace;color:#9a9a92">
+              <div>AMENITY</div><div>TYPE</div><div>CAPACITY</div><div>RULES</div><div>STATUS</div>
+            </div>
+            <sc-for list="{{ configured }}" as="a" hint-placeholder-count="7">
+              <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.5fr) auto;gap:14px;padding:15px 20px;border-bottom:1px solid #f2f2ed;align-items:center" style-hover="background:#fcfcfa">
+                <div>
+                  <div style="font-size:14.5px;font-weight:500">{{ a.name }}</div>
+                  <div style="margin-top:3px;font-size:12px;color:#9a9a92">{{ a.place }}</div>
+                </div>
+                <div style="font-size:13px;color:#4a4a44">{{ a.type }}</div>
+                <div style="font-size:13px;color:#4a4a44">{{ a.cap }} people</div>
+                <div>
+                  <div style="font-size:13px;color:#4a4a44">{{ a.price }}</div>
+                  <div style="margin-top:3px;font-size:11.5px;color:#9a9a92;font-family:'IBM Plex Mono',monospace">{{ a.rules }}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <sc-if value="{{ a.active }}" hint-placeholder-val="{{ true }}">
+                    <span style="font-size:10.5px;letter-spacing:.07em;font-family:'IBM Plex Mono',monospace;color:#0f5c52;border:1px solid #cfe3df;background:#f2f7f5;border-radius:99px;padding:3px 8px">ACTIVE</span>
+                  </sc-if>
+                  <sc-if value="{{ a.inactive }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-size:10.5px;letter-spacing:.07em;font-family:'IBM Plex Mono',monospace;color:#8a8a82;border:1px solid #e7e7e1;background:#f6f6f3;border-radius:99px;padding:3px 8px">INACTIVE</span>
+                  </sc-if>
+                  <button onClick="{{ a.configure }}" style="border:1px solid #e4e4de;background:#fff;color:#3f3f3a;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer" style-hover="border-color:#0f5c52;color:#0f5c52">Configure</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ adminEdit }}" hint-placeholder-val="{{ false }}">
+        <div>
+        <button onClick="{{ backToList }}" style="border:0;background:transparent;color:#0f5c52;font-size:12.5px;cursor:pointer;padding:0 0 14px">← All amenities</button>
+        <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap">
+          <div>
+            <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.6px">Amenity configuration</h1>
+            <p style="margin:8px 0 0;font-size:15px;color:#6f6f68">{{ editSubtitle }}</p>
+          </div>
+          <div style="flex:1"></div>
+          <div style="display:flex;gap:8px">
+            <button onClick="{{ saveAmenity }}" style="border:0;background:#0f5c52;color:#fff;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer" style-hover="background:#0b463e">Save amenity</button>
+            <button style="border:1px solid #f0dede;background:#fff;color:#9c4a44;border-radius:8px;padding:10px 16px;font-size:13px;cursor:pointer" style-hover="background:#fdf5f4">Deactivate</button>
+          </div>
+        </div>
+
+        <sc-if value="{{ saved }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:18px;border:1px solid #cfe3df;background:#f5faf8;border-radius:8px;padding:12px 16px;font-size:13.5px;color:#3f5c56;animation:rise .24s ease both">Configuration saved. The assistant will enforce these rules on the next request.</div>
+        </sc-if>
+
+        <div style="margin-top:24px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start">
+          <div style="background:#fff;border:1px solid #e4e4de;border-radius:12px;overflow:hidden">
+            <sc-for list="{{ formGroups }}" as="g" hint-placeholder-count="4">
+              <div style="border-bottom:1px solid #f2f2ed;padding:22px 24px">
+                <div style="font-size:11px;letter-spacing:.08em;font-family:'IBM Plex Mono',monospace;color:#9a9a92">{{ g.title }}</div>
+                <div style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px">
+                  <sc-for list="{{ g.fields }}" as="f" hint-placeholder-count="4">
+                    <label style="display:block">
+                      <span style="display:block;font-size:12.5px;color:#5f5f58;margin-bottom:6px">{{ f.label }}</span>
+                      <sc-if value="{{ f.isSelect }}" hint-placeholder-val="{{ false }}">
+                        <select style="width:100%;border:1px solid #e4e4de;border-radius:7px;padding:9px 10px;font-size:13.5px;background:#fff;color:#1b1b19;outline:none" style-focus="border-color:#0f5c52">
+                          <sc-for list="{{ f.options }}" as="op" hint-placeholder-count="2">
+                            <option>{{ op }}</option>
+                          </sc-for>
+                        </select>
+                      </sc-if>
+                      <sc-if value="{{ f.isText }}" hint-placeholder-val="{{ true }}">
+                        <input defaultValue="{{ f.value }}" style="width:100%;border:1px solid #e4e4de;border-radius:7px;padding:9px 10px;font-size:13.5px;background:#fff;color:#1b1b19;outline:none" style-focus="border-color:#0f5c52"/>
+                      </sc-if>
+                    </label>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:#fff;border:1px solid #e4e4de;border-radius:12px;padding:22px 24px;position:sticky;top:96px">
+            <div style="font-size:11px;letter-spacing:.08em;font-family:'IBM Plex Mono',monospace;color:#9a9a92">AMENITY GUIDELINES</div>
+            <p style="margin:10px 0 0;font-size:12.5px;color:#8a8a82;line-height:1.55">Plain-language rules. The assistant reads these when resolving requests.</p>
+            <textarea defaultValue="{{ guidelines }}" rows="11" style="margin-top:14px;width:100%;border:1px solid #e4e4de;border-radius:8px;padding:12px;font-size:13px;line-height:1.7;font-family:'IBM Plex Mono',monospace;color:#1b1b19;background:#fcfcfa;outline:none;resize:vertical" style-focus="border-color:#0f5c52"></textarea>
+            <div style="margin-top:14px;display:flex;align-items:center;gap:8px">
+              <span style="width:6px;height:6px;border-radius:99px;background:#0f5c52"></span>
+              <span style="font-size:12px;color:#5f5f58">6 rules parsed · 0 conflicts</span>
+            </div>
+          </div>
+        </div>
+        </div>
+        </sc-if>
+      </section>
+      </sc-if>
+
+      <sc-if value="{{ isPass }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Access pass" style="animation:rise .28s ease both;max-width:520px;margin:0 auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.5px">Access pass</h1>
+          <div style="display:flex;border:1px solid #e4e4de;border-radius:99px;background:#fff;padding:3px">
+            <sc-for list="{{ passModes }}" as="p" hint-placeholder-count="2">
+              <sc-if value="{{ p.on }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ p.go }}" style="border:0;background:#1b1b19;color:#fff;border-radius:99px;padding:5px 12px;font-size:11.5px;cursor:pointer">{{ p.label }}</button>
+              </sc-if>
+              <sc-if value="{{ p.off }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ p.go }}" style="border:0;background:transparent;color:#7a7a72;border-radius:99px;padding:5px 12px;font-size:11.5px;cursor:pointer" style-hover="color:#1b1b19">{{ p.label }}</button>
+              </sc-if>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;background:#fff;border:1px solid #e4e4de;border-radius:16px;padding:32px;text-align:center;box-shadow:0 1px 3px rgba(27,27,25,.05)">
+          <sc-if value="{{ passActive }}" hint-placeholder-val="{{ true }}">
+            <div style="display:inline-flex;align-items:center;gap:8px;border:1px solid #cfe3df;background:#f2f7f5;color:#0f5c52;border-radius:99px;padding:5px 12px;font-size:11px;letter-spacing:.09em;font-family:'IBM Plex Mono',monospace">
+              <span style="width:6px;height:6px;border-radius:99px;background:#0f5c52"></span>ACTIVE
+            </div>
+            <img src="{{ qr }}" alt="Access QR code" style="display:block;margin:26px auto 0;width:232px;height:232px;border:1px solid #e7e7e1;border-radius:10px;animation:pop .34s ease both"/>
+            <div style="margin-top:18px;font-size:13px;color:#8a8a82;font-family:'IBM Plex Mono',monospace">{{ countdown }}</div>
+          </sc-if>
+          <sc-if value="{{ passExpired }}" hint-placeholder-val="{{ false }}">
+            <div style="display:inline-flex;align-items:center;gap:8px;border:1px solid #e7e7e1;background:#f6f6f3;color:#8a8a82;border-radius:99px;padding:5px 12px;font-size:11px;letter-spacing:.09em;font-family:'IBM Plex Mono',monospace">
+              <span style="width:6px;height:6px;border-radius:99px;background:#b4b4ac"></span>EXPIRED
+            </div>
+            <img src="{{ qr }}" alt="Expired QR code" style="display:block;margin:26px auto 0;width:232px;height:232px;border:1px solid #eeeee9;border-radius:10px;filter:grayscale(1);opacity:.24"/>
+            <div style="margin-top:18px;font-size:13.5px;color:#8a8a82">This access pass is no longer valid.</div>
+          </sc-if>
+
+          <div style="margin-top:26px;padding-top:24px;border-top:1px solid #f0f0eb;text-align:left;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:18px">
+            <div>
+              <div style="font-size:11px;letter-spacing:.06em;color:#9a9a92;font-family:'IBM Plex Mono',monospace">AMENITY</div>
+              <div style="margin-top:5px;font-size:14px;font-weight:500">Emerald Meeting Room</div>
+            </div>
+            <div>
+              <div style="font-size:11px;letter-spacing:.06em;color:#9a9a92;font-family:'IBM Plex Mono',monospace">LOCATION</div>
+              <div style="margin-top:5px;font-size:14px;font-weight:500">Tower A · Floor 8</div>
+            </div>
+            <div>
+              <div style="font-size:11px;letter-spacing:.06em;color:#9a9a92;font-family:'IBM Plex Mono',monospace">VALID</div>
+              <div style="margin-top:5px;font-size:14px;font-weight:500">3:00 PM – 4:00 PM</div>
+            </div>
+            <div>
+              <div style="font-size:11px;letter-spacing:.06em;color:#9a9a92;font-family:'IBM Plex Mono',monospace">ATTENDEES</div>
+              <div style="margin-top:5px;font-size:14px;font-weight:500">5</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px">
+          <button onClick="{{ goBookings }}" style="border:1px solid #e4e4de;background:#fff;color:#3f3f3a;border-radius:8px;padding:10px 15px;font-size:13px;cursor:pointer" style-hover="border-color:#c9c9c1">Back to bookings</button>
+          <button style="border:1px solid #e4e4de;background:#fff;color:#3f3f3a;border-radius:8px;padding:10px 15px;font-size:13px;cursor:pointer" style-hover="border-color:#c9c9c1">Add to calendar</button>
+        </div>
+      </section>
+      </sc-if>
+
+      <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Profile" style="animation:rise .28s ease both;max-width:560px">
+        <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.6px">Profile</h1>
+        <div style="margin-top:22px;background:#fff;border:1px solid #e4e4de;border-radius:12px;padding:24px">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="width:52px;height:52px;border-radius:99px;background:#e6e9e5;color:#14322d;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:600">C</div>
+            <div>
+              <div style="font-size:17px;font-weight:600;letter-spacing:-0.3px">Chirag</div>
+              <div style="margin-top:3px;font-size:13px;color:#8a8a82">Google · Tower A · Employee</div>
+            </div>
+          </div>
+          <div style="margin-top:22px;padding-top:20px;border-top:1px solid #f0f0eb;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:18px">
+            <div>
+              <div style="font-size:11px;letter-spacing:.06em;color:#9a9a92;font-family:'IBM Plex Mono',monospace">CREDITS</div>
+              <div style="margin-top:5px;font-size:14px;font-weight:500">{{ credits }} remaining</div>
+            </div>
+            <div>
+              <div style="font-size:11px;letter-spacing:.06em;color:#9a9a92;font-family:'IBM Plex Mono',monospace">ELIGIBILITY</div>
+              <div style="margin-top:5px;font-size:14px;font-weight:500">All amenities</div>
+            </div>
+            <div>
+              <div style="font-size:11px;letter-spacing:.06em;color:#9a9a92;font-family:'IBM Plex Mono',monospace">VOICE</div>
+              <div style="margin-top:5px;font-size:14px;font-weight:500">Enabled</div>
+            </div>
+          </div>
+        </div>
+      </section>
+      </sc-if>
+
+    </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ mobile }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;justify-content:center;padding:34px 20px 60px;background:#eeeeea">
+      <div style="width:390px;flex:0 0 390px;background:#f4f4f1;border:1px solid #dcdcd6;border-radius:38px;box-shadow:0 20px 50px rgba(27,27,25,.12);overflow:hidden;display:flex;flex-direction:column;height:800px">
+        <div style="padding:14px 22px 8px;display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-family:'IBM Plex Mono',monospace;color:#5f5f58">
+          <span>2:41</span><span>AmenityOS</span><span>100%</span>
+        </div>
+
+        <div style="flex:1;overflow-y:auto;padding:10px 20px 24px">
+          <sc-if value="{{ mHome }}" hint-placeholder-val="{{ true }}">
+          <div data-screen-label="Mobile home">
+            <h2 style="margin:8px 0 0;font-size:22px;font-weight:600;letter-spacing:-0.5px">Good afternoon, Chirag</h2>
+            <p style="margin:6px 0 0;font-size:13.5px;color:#6f6f68">What would you like to book today?</p>
+            <div style="margin-top:18px;background:#fff;border:1px solid #e4e4de;border-radius:14px;padding:28px 18px;display:flex;flex-direction:column;align-items:center;text-align:center">
+              <sc-if value="{{ vIdle }}" hint-placeholder-val="{{ true }}">
+                <div style="position:relative;display:flex;align-items:center;justify-content:center">
+                  <div style="position:absolute;width:88px;height:88px;border-radius:99px;border:1px solid #cfe3df;animation:pulseRing 2.6s ease-out infinite"></div>
+                  <button onClick="{{ startVoice }}" style="position:relative;width:88px;height:88px;border-radius:99px;border:0;background:#0f5c52;color:#fff;font-size:22px;cursor:pointer;box-shadow:0 6px 18px rgba(15,92,82,.22)" style-active="transform:scale(.97)">◉</button>
+                </div>
+                <div style="margin-top:16px;font-size:16px;font-weight:500">{{ idleLabel }}</div>
+              </sc-if>
+              <sc-if value="{{ vListen }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;justify-content:center;gap:3px;height:70px">
+                  <sc-for list="{{ barsMobile }}" as="b" hint-placeholder-count="16">
+                    <div style="width:4px;border-radius:99px;background:#0f5c52;height:{{ b.h }}px;animation:wf {{ b.s }}s ease-in-out infinite;animation-delay:{{ b.d }}s"></div>
+                  </sc-for>
+                </div>
+                <div style="margin-top:14px;font-size:16px;font-weight:500">Listening…</div>
+              </sc-if>
+              <sc-if value="{{ vAfter }}" hint-placeholder-val="{{ false }}">
+                <div style="width:100%;text-align:left">
+                  <div style="font-size:16px;font-weight:500;line-height:1.4">“{{ transcript }}”</div>
+                  <div style="margin-top:16px;display:flex;flex-direction:column;gap:2px">
+                    <sc-for list="{{ steps }}" as="s" hint-placeholder-count="4">
+                      <sc-if value="{{ s.done }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex;align-items:center;gap:10px;padding:7px 0;font-size:13px;color:#4a4a44"><span style="width:16px;height:16px;border-radius:99px;background:#0f5c52;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center">✓</span>{{ s.label }}</div>
+                      </sc-if>
+                      <sc-if value="{{ s.active }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex;align-items:center;gap:10px;padding:7px 0;font-size:13px;color:#1b1b19;font-weight:500"><span style="width:16px;height:16px;border-radius:99px;border:2px solid #d7ded9;border-top-color:#0f5c52;animation:spin .7s linear infinite"></span>{{ s.label }}</div>
+                      </sc-if>
+                      <sc-if value="{{ s.todo }}" hint-placeholder-val="{{ true }}">
+                        <div style="display:flex;align-items:center;gap:10px;padding:7px 0;font-size:13px;color:#b4b4ac"><span style="width:16px;height:16px;border-radius:99px;border:1px solid #e4e4de"></span>{{ s.label }}</div>
+                      </sc-if>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ vDone }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top:14px;display:flex;align-items:center;gap:10px;animation:pop .3s ease both">
+                      <span style="width:24px;height:24px;border-radius:99px;background:#0f5c52;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px">✓</span>
+                      <div style="font-size:16px;font-weight:600">Booking confirmed.</div>
+                    </div>
+                    <button onClick="{{ resetVoice }}" style="margin-top:14px;width:100%;border:1px solid #e4e4de;background:#fff;color:#3f3f3a;border-radius:8px;padding:9px;font-size:13px;cursor:pointer">Ask again</button>
+                  </sc-if>
+                </div>
+              </sc-if>
+            </div>
+
+            <sc-if value="{{ vDone }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:14px;background:#fff;border:1px solid #e4e4de;border-radius:14px;padding:20px;text-align:center;animation:rise .3s ease both">
+                <img src="{{ qr }}" alt="Access QR code" style="width:128px;height:128px;border:1px solid #e7e7e1;border-radius:8px"/>
+                <div style="margin-top:12px;font-size:15px;font-weight:600">Emerald Meeting Room</div>
+                <div style="margin-top:3px;font-size:12.5px;color:#8a8a82">Today · 3:00–4:00 PM · 5 attendees</div>
+                <div style="margin-top:10px;font-size:11.5px;color:#8a8a82">Show this QR code at the amenity entrance.</div>
+              </div>
+            </sc-if>
+
+            <h3 style="margin:26px 0 0;font-size:14px;font-weight:600;letter-spacing:-0.2px">Upcoming bookings</h3>
+            <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ upcoming }}" as="b" hint-placeholder-count="3">
+                <div style="background:#fff;border:1px solid #e4e4de;border-radius:12px;padding:15px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                    <div style="font-size:14px;font-weight:600">{{ b.name }}</div>
+                    <span style="font-size:10px;letter-spacing:.07em;font-family:'IBM Plex Mono',monospace;color:#0f5c52">CONFIRMED</span>
+                  </div>
+                  <div style="margin-top:7px;font-size:12.5px;color:#4a4a44">{{ b.when }} · {{ b.meta }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ mAmenities }}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="Mobile amenities">
+            <h2 style="margin:8px 0 0;font-size:22px;font-weight:600;letter-spacing:-0.5px">Explore amenities</h2>
+            <div style="margin-top:16px;display:flex;flex-direction:column;gap:12px">
+              <sc-for list="{{ amenities }}" as="a" hint-placeholder-count="4">
+                <div style="background:#fff;border:1px solid #e4e4de;border-radius:12px;overflow:hidden">
+                  <div style="height:88px;background:repeating-linear-gradient(135deg,#f0f0ea 0 8px,#e8e8e1 8px 16px);display:flex;align-items:flex-end;padding:8px 10px">
+                    <span style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:#9a9a92;background:rgba(255,255,255,.85);border-radius:4px;padding:2px 6px">{{ a.shot }}</span>
+                  </div>
+                  <div style="padding:14px">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                      <div style="font-size:14.5px;font-weight:600">{{ a.name }}</div>
+                      <span style="font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:#5f5f58">{{ a.price }}</span>
+                    </div>
+                    <div style="margin-top:4px;font-size:12px;color:#8a8a82">{{ a.place }} · Capacity {{ a.cap }}</div>
+                    <button onClick="{{ a.book }}" style="margin-top:12px;width:100%;border:0;background:#1b1b19;color:#fff;border-radius:8px;padding:11px;font-size:13.5px;font-weight:500;cursor:pointer">Book</button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ mBookings }}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="Mobile bookings">
+            <h2 style="margin:8px 0 0;font-size:22px;font-weight:600;letter-spacing:-0.5px">My bookings</h2>
+            <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ allBookings }}" as="b" hint-placeholder-count="4">
+                <div style="background:#fff;border:1px solid #e4e4de;border-radius:12px;padding:15px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                    <div style="font-size:14px;font-weight:600">{{ b.name }}</div>
+                    <span style="font-size:10px;letter-spacing:.07em;font-family:'IBM Plex Mono',monospace;color:{{ b.tone }}">{{ b.status }}</span>
+                  </div>
+                  <div style="margin-top:7px;font-size:12.5px;color:#4a4a44">{{ b.when }} · {{ b.meta }}</div>
+                  <div style="margin-top:4px;font-size:11.5px;color:#9a9a92;font-family:'IBM Plex Mono',monospace">{{ b.id }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ mProfile }}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="Mobile profile">
+            <h2 style="margin:8px 0 0;font-size:22px;font-weight:600;letter-spacing:-0.5px">Profile</h2>
+            <div style="margin-top:16px;background:#fff;border:1px solid #e4e4de;border-radius:12px;padding:18px;display:flex;align-items:center;gap:12px">
+              <div style="width:44px;height:44px;border-radius:99px;background:#e6e9e5;color:#14322d;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600">C</div>
+              <div>
+                <div style="font-size:15px;font-weight:600">Chirag</div>
+                <div style="margin-top:2px;font-size:12.5px;color:#8a8a82">Google · Tower A</div>
+              </div>
+            </div>
+            <div style="margin-top:12px;background:#fff;border:1px solid #e4e4de;border-radius:12px;padding:18px">
+              <div style="font-size:11px;letter-spacing:.07em;font-family:'IBM Plex Mono',monospace;color:#9a9a92">CREDITS REMAINING</div>
+              <div style="margin-top:8px;font-size:30px;font-weight:600;letter-spacing:-1px">{{ credits }}</div>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+
+        <div style="border-top:1px solid #e4e4de;background:#fbfbf9;padding:10px 12px 20px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+          <sc-for list="{{ mobileNav }}" as="t" hint-placeholder-count="4">
+            <sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ t.go }}" style="border:0;background:transparent;color:#0f5c52;font-size:11.5px;font-weight:600;cursor:pointer;padding:8px 0;display:flex;flex-direction:column;align-items:center;gap:5px;min-height:44px">
+                <span style="width:6px;height:6px;border-radius:99px;background:#0f5c52"></span>{{ t.label }}
+              </button>
+            </sc-if>
+            <sc-if value="{{ t.off }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ t.go }}" style="border:0;background:transparent;color:#8a8a82;font-size:11.5px;cursor:pointer;padding:8px 0;display:flex;flex-direction:column;align-items:center;gap:5px;min-height:44px">
+                <span style="width:6px;height:6px;border-radius:99px;background:#dcdcd6"></span>{{ t.label }}
+              </button>
+            </sc-if>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;stepDuration&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:620,&quot;min&quot;:250,&quot;max&quot;:1400,&quot;step&quot;:10,&quot;unit&quot;:&quot;ms&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Assistant&quot;},&quot;startingCredits&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:24,&quot;min&quot;:0,&quot;max&quot;:40,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Assistant&quot;},&quot;holdToSpeak&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Assistant&quot;}}">
+class Component extends DCLogic {
+  state = {
+    page: 'home', device: 'desktop', mtab: 'home',
+    voice: 'idle', step: 0, typed: '',
+    transcript: 'Book Emerald Meeting Room today at 3 PM for five people.',
+    credits: null, scenario: 'unavailable',
+    scn: { unavailable: null, paid: 'ask', low: 'idle', capacity: null },
+    pass: 'active', secs: 2832, saved: false,
+    adminView: 'list', editing: 0
+  };
+  timers = [];
+
+  componentDidMount() {
+    this.tick = setInterval(() => this.setState(s => ({ secs: Math.max(0, s.secs - 1) })), 1000);
+  }
+  componentWillUnmount() { clearInterval(this.tick); this.clear(); }
+  clear() { this.timers.forEach(clearTimeout); this.timers = []; }
+  at(ms, fn) { this.timers.push(setTimeout(fn, ms)); }
+
+  get cr() { return this.state.credits === null ? (this.props.startingCredits ?? 24) : this.state.credits; }
+
+  run(transcript) {
+    this.clear();
+    const d = this.props.stepDuration ?? 620;
+    this.setState({ voice: 'processing', step: 0, transcript });
+    for (let i = 1; i <= 4; i++) this.at(d * i, () => this.setState({ step: i }));
+    this.at(d * 4 + 240, () => this.setState({ voice: 'done' }));
+  }
+  startVoice = () => {
+    this.clear();
+    this.setState({ voice: 'listening', step: 0 });
+    this.at(1500, () => this.run('Book Emerald Meeting Room today at 3 PM for five people.'));
+  };
+  resetVoice = () => { this.clear(); this.setState({ voice: 'idle', step: 0, typed: '' }); };
+  sendTyped = () => {
+    const t = (this.state.typed || '').trim();
+    this.run(t || 'Book Emerald Meeting Room today at 3 PM for five people.');
+  };
+
+  go(page) { return () => { this.setState({ page, saved: false, adminView: 'list' }); if (page !== 'home') this.resetVoice(); }; }
+
+  adminRows() {
+    return [
+      { type: 'Meeting room', rules: 'max 2h · 8 guests', active: true, desc: '6-seat meeting room with display and whiteboard', floor: '8', cost: '0' },
+      { type: 'Meeting room', rules: 'max 3h · 12 guests', active: true, desc: '10-seat meeting room with video conferencing', floor: '8', cost: '0' },
+      { type: 'Meeting room', rules: 'max 1h · 4 guests', active: true, desc: '4-seat huddle room', floor: '6', cost: '0' },
+      { type: 'Conference room', rules: 'max 4h · approval req.', active: true, desc: '15-seat conference room with AV desk', floor: '12', cost: '10' },
+      { type: 'Fitness', rules: 'max 1h · 1 per day', active: true, desc: 'Cardio and strength floor with showers', floor: '2', cost: '10' },
+      { type: 'Theater', rules: 'max 3h · approval req.', active: true, desc: '30-seat screening theater', floor: '1', cost: '20' },
+      { type: 'Recreation', rules: 'max 30m · 2 per day', active: false, desc: 'Two table tennis boards in the lounge', floor: '2', cost: '2' }
+    ].map((r, i) => Object.assign({}, this.amenityList()[i], r));
+  }
+
+  bars(n, max) {
+    return Array.from({ length: n }, (_, i) => {
+      const seed = Math.sin(i * 1.7) * 0.5 + 0.5;
+      return { h: Math.round(8 + seed * max), s: (0.7 + (i % 5) * 0.12).toFixed(2), d: ((i % 7) * 0.09).toFixed(2) };
+    });
+  }
+
+  qrUri() {
+    const n = 29, c = 4, m = [];
+    let s = 987651;
+    const rnd = () => { s = (s * 1103515245 + 12345) >>> 0; return (s >>> 16) / 65536; };
+    for (let y = 0; y < n; y++) { m.push([]); for (let x = 0; x < n; x++) m[y].push(rnd() > 0.48); }
+    const finder = (ox, oy) => {
+      for (let y = -1; y < 8; y++) for (let x = -1; x < 8; x++) {
+        const yy = oy + y, xx = ox + x;
+        if (yy < 0 || yy >= n || xx < 0 || xx >= n) continue;
+        if (y < 0 || y > 6 || x < 0 || x > 6) m[yy][xx] = false;
+        else m[yy][xx] = (x === 0 || x === 6 || y === 0 || y === 6) || (x > 1 && x < 5 && y > 1 && y < 5);
+      }
+    };
+    finder(0, 0); finder(n - 7, 0); finder(0, n - 7);
+    for (let i = 8; i < n - 8; i++) { m[6][i] = i % 2 === 0; m[i][6] = i % 2 === 0; }
+    let r = '';
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (m[y][x]) r += '<rect x="' + x * c + '" y="' + y * c + '" width="' + c + '" height="' + c + '"/>';
+    const size = n * c;
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '"><rect width="' + size + '" height="' + size + '" fill="#ffffff"/><g fill="#1b1b19">' + r + '</g></svg>';
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  }
+
+  amenityList() {
+    return [
+      { name: 'Emerald Meeting Room', place: 'Tower A · Floor 8', cap: 6, price: 'Free', avail: 'FREE UNTIL 3 PM', shot: 'room photo' },
+      { name: 'Sapphire Meeting Room', place: 'Tower A · Floor 8', cap: 10, price: 'Free', avail: 'AVAILABLE NOW', shot: 'room photo' },
+      { name: 'Ruby Meeting Room', place: 'Tower A · Floor 6', cap: 4, price: 'Free', avail: 'AVAILABLE NOW', shot: 'room photo' },
+      { name: 'Diamond Conference Room', place: 'Tower A · Floor 12', cap: 15, price: '10 credits', avail: 'BUSY UNTIL 4 PM', shot: 'room photo' },
+      { name: 'Gym', place: 'Tower A · Floor 2', cap: 10, price: '10 credits', avail: '4 SLOTS TODAY', shot: 'gym photo' },
+      { name: 'Theater', place: 'Tower A · Floor 1', cap: 30, price: '20 credits', avail: '2 SLOTS TODAY', shot: 'theater photo' },
+      { name: 'Table Tennis', place: 'Tower A · Floor 2', cap: 4, price: '2 credits', avail: 'AVAILABLE NOW', shot: 'lounge photo' }
+    ];
+  }
+
+  scenarioData() {
+    const k = this.state.scenario, st = this.state.scn;
+    const pick = (key, label) => () => this.setState(s => ({ scn: Object.assign({}, s.scn, { [key]: label }) }));
+
+    if (k === 'unavailable') {
+      const booked = st.unavailable;
+      return {
+        user: 'Book Emerald at 3 PM for one hour.',
+        agent: booked ? 'Emerald is unavailable at 3 PM. I booked the next valid slot instead.' : 'Emerald is unavailable at 3 PM.',
+        hasOptions: !booked, optionsTitle: 'VALID ALTERNATIVES · TODAY',
+        options: [
+          { name: 'Emerald', detail: '4:00–5:00 PM', tag: 'AVAILABLE', pick: pick('unavailable', 'Emerald · 4:00–5:00 PM') },
+          { name: 'Emerald', detail: '2:00–3:00 PM', tag: 'AVAILABLE', pick: pick('unavailable', 'Emerald · 2:00–3:00 PM') },
+          { name: 'Sapphire', detail: '3:00–4:00 PM', tag: 'AVAILABLE', pick: pick('unavailable', 'Sapphire · 3:00–4:00 PM') }
+        ],
+        hasActions: false, actions: [],
+        hasResult: !!booked, resultTitle: 'Booking confirmed.',
+        resultBody: booked ? booked + '\nBooking ID AMN-20482 · access pass issued.' : '',
+        hasBlock: false,
+        trace: 'availability checked · 3 conflicting holds · 0 credits required'
+      };
+    }
+    if (k === 'paid') {
+      const s = st.paid;
+      return {
+        user: 'Book the gym at 6 PM.',
+        agent: s === 'ask'
+          ? 'The gym is available from 6:00–7:00 PM.\nThis booking costs 10 credits. You have ' + this.cr + ' credits remaining.\nWould you like me to confirm?'
+          : s === 'confirmed' ? 'The gym is booked for 6:00–7:00 PM.' : 'No problem — nothing was booked and no credits were used.',
+        hasOptions: false, options: [], optionsTitle: '',
+        hasActions: s === 'ask',
+        actions: [
+          { label: 'Confirm booking', primary: true, secondary: false, run: () => this.setState(x => ({ scn: Object.assign({}, x.scn, { paid: 'confirmed' }), credits: Math.max(0, this.cr - 10) })) },
+          { label: 'Cancel', primary: false, secondary: true, run: () => this.setState(x => ({ scn: Object.assign({}, x.scn, { paid: 'cancelled' }) })) }
+        ],
+        hasResult: s === 'confirmed', resultTitle: 'Booking confirmed.',
+        resultBody: '10 credits deducted. ' + this.cr + ' credits remaining.\nBooking ID AMN-20483 · access pass issued.',
+        hasBlock: false,
+        trace: 'eligibility passed · credit hold placed · confirmation required by policy'
+      };
+    }
+    if (k === 'low') {
+      const sent = st.low === 'sent';
+      return {
+        user: 'Book the gym at 6 PM.',
+        agent: 'The gym costs 10 credits, but you only have 4 credits remaining.',
+        hasOptions: false, options: [], optionsTitle: '',
+        hasActions: !sent,
+        actions: [{ label: 'Contact admin', primary: true, secondary: false, run: () => this.setState(x => ({ scn: Object.assign({}, x.scn, { low: 'sent' }) })) }],
+        hasResult: sent, resultTitle: 'Request sent to workplace admin.',
+        resultBody: 'Priya N. will review your credit top-up request. You will be notified in AmenityOS.',
+        hasBlock: !sent, blockTitle: 'Your booking cannot be completed.',
+        blockBody: 'Insufficient credits. Paid amenities require the full credit cost at time of booking.',
+        trace: 'credit check failed · 4 of 10 required · booking not created'
+      };
+    }
+    const booked = st.capacity;
+    return {
+      user: 'Book the Ruby meeting room for 8 people.',
+      agent: booked ? 'Ruby Meeting Room has a capacity of 4. I moved your request to a larger room.' : 'Ruby Meeting Room has a capacity of 4.\nI can check larger rooms at the same time.',
+      hasOptions: !booked, optionsTitle: 'ROOMS THAT FIT 8 · 3:00–4:00 PM',
+      options: [
+        { name: 'Emerald', detail: 'Floor 8 · capacity 6', tag: 'TOO SMALL BY 2', pick: pick('capacity', 'Emerald · capacity 6 · 3:00–4:00 PM') },
+        { name: 'Sapphire', detail: 'Floor 8 · capacity 10', tag: 'FITS 8', pick: pick('capacity', 'Sapphire · capacity 10 · 3:00–4:00 PM') }
+      ],
+      hasActions: false, actions: [],
+      hasResult: !!booked, resultTitle: 'Booking confirmed.',
+      resultBody: booked ? booked + '\nBooking ID AMN-20484 · access pass issued.' : '',
+      hasBlock: false,
+      trace: 'capacity rule enforced · attendees 8 · 2 candidate rooms'
+    };
+  }
+
+  renderVals() {
+    const p = this.state.page, v = this.state.voice, dsk = this.state.device === 'desktop';
+    const crumbs = { home: 'Home', assistant: 'AI Assistant', amenities: 'Amenities', bookings: 'My Bookings', credits: 'Credits', admin: 'Admin', pass: 'My Bookings / Access pass', profile: 'Profile' };
+    const navDef = [
+      ['home', 'Home'], ['assistant', 'AI Assistant'], ['amenities', 'Amenities'], ['bookings', 'My Bookings'],
+      ['rule1', null], ['credits', 'Credits'], ['rule2', null], ['admin', 'Admin']
+    ];
+    const activeKey = p === 'pass' ? 'bookings' : p;
+    const stepLabels = ['Understanding request…', 'Checking Emerald availability…', 'Checking booking rules…', 'Booking Emerald…'];
+    const st = this.state.step;
+    const mm = String(Math.floor(this.state.secs / 60)).padStart(2, '0'), ss = String(this.state.secs % 60).padStart(2, '0');
+    const ed = this.state.editing >= 0 ? this.adminRows()[this.state.editing] : null;
+    const typeOpts = ['Meeting room', 'Conference room', 'Fitness', 'Recreation', 'Theater'];
+    if (ed) typeOpts.sort((a, b) => (a === ed.type ? -1 : b === ed.type ? 1 : 0));
+
+    const upcoming = [
+      { name: 'Emerald Meeting Room', when: 'Today · 3:00–4:00 PM', meta: '5 attendees' },
+      { name: 'Gym', when: 'Tomorrow · 6:00–7:00 PM', meta: '10 credits' },
+      { name: 'Conference Room Diamond', when: 'Friday · 11:00 AM–12:00 PM', meta: '10 credits' }
+    ];
+    const past = [
+      { name: 'Table Tennis', place: 'Floor 2', when: 'Yesterday · 5:30–6:00 PM', meta: '2 credits', status: 'COMPLETED', tone: '#8a8a82', line: '#e7e7e1', id: 'AMN-20390' },
+      { name: 'Theater', place: 'Floor 1', when: 'Sep 2 · 7:00–9:00 PM', meta: '20 credits', status: 'CANCELLED', tone: '#9c4a44', line: '#f0dede', id: 'AMN-20321' }
+    ];
+
+    return {
+      desktop: dsk, mobile: !dsk, crumb: crumbs[p] || 'Home',
+      creditLabel: this.cr + ' credits',
+      devices: [
+        { label: 'Desktop', on: dsk, off: !dsk, go: () => this.setState({ device: 'desktop' }) },
+        { label: 'Mobile', on: !dsk, off: dsk, go: () => this.setState({ device: 'mobile' }) }
+      ],
+      nav: navDef.map(([k, label]) => ({
+        label, rule: label === null, on: label !== null && activeKey === k, off: label !== null && activeKey !== k, go: this.go(k)
+      })),
+      isHome: p === 'home', isAssistant: p === 'assistant', isAmenities: p === 'amenities',
+      isBookings: p === 'bookings', isCredits: p === 'credits', isAdmin: p === 'admin',
+      isPass: p === 'pass', isProfile: p === 'profile',
+      goBookings: this.go('bookings'), goPass: this.go('pass'), goProfile: this.go('profile'),
+
+      vIdle: v === 'idle', vListen: v === 'listening', vAfter: v === 'processing' || v === 'done', vDone: v === 'done',
+      idleLabel: (this.props.holdToSpeak ?? true) ? 'Hold to speak' : 'Tap to speak',
+      startVoice: this.startVoice, resetVoice: this.resetVoice, sendTyped: this.sendTyped,
+      typed: this.state.typed,
+      onType: e => this.setState({ typed: e.target.value }),
+      onKey: e => { if (e.key === 'Enter') this.sendTyped(); },
+      transcript: this.state.transcript,
+      steps: stepLabels.map((label, i) => ({ label, done: st > i, active: st === i, todo: st < i })),
+      bars: this.bars(26, 64), barsMobile: this.bars(16, 52),
+      qr: this.qrUri(),
+
+      upcoming,
+      allBookings: upcoming.map((b, i) => Object.assign({}, b, {
+        place: ['Tower A · Floor 8', 'Tower A · Floor 2', 'Tower A · Floor 12'][i],
+        id: ['AMN-20481', 'AMN-20455', 'AMN-20460'][i], status: 'CONFIRMED', tone: '#0f5c52', line: '#cfe3df'
+      })).concat(past),
+
+      amenities: this.amenityList().map(a => Object.assign({}, a, {
+        book: () => { this.clear(); this.setState({ page: 'home', device: this.state.device, mtab: 'home', voice: 'idle', typed: 'Book ' + a.name + ' today at 3 PM for ' + Math.min(5, a.cap) + ' people' }); }
+      })),
+
+      credits: this.cr, creditPct: Math.round(this.cr / 40 * 100), spent: 40 - this.cr,
+      ledger: [
+        { name: 'Gym · Tomorrow 6:00 PM', date: 'SEP 9, 2026', amount: '−10', tone: '#8f3f39' },
+        { name: 'Conference Room Diamond · Friday', date: 'SEP 7, 2026', amount: '−10', tone: '#8f3f39' },
+        { name: 'Monthly allowance', date: 'SEP 1, 2026', amount: '+40', tone: '#0f5c52' },
+        { name: 'Table Tennis · Sep 8', date: 'AUG 31, 2026', amount: '−2', tone: '#8f3f39' }
+      ],
+
+      scenarios: [
+        { key: 'unavailable', label: 'Slot unavailable' }, { key: 'paid', label: 'Paid amenity' },
+        { key: 'low', label: 'Insufficient credits' }, { key: 'capacity', label: 'Capacity exceeded' }
+      ].map(s => ({
+        label: s.label, on: this.state.scenario === s.key, off: this.state.scenario !== s.key,
+        go: () => this.setState({ scenario: s.key, scn: { unavailable: null, paid: 'ask', low: 'idle', capacity: null } })
+      })),
+      scn: this.scenarioData(),
+
+      passModes: [
+        { label: 'Active', on: this.state.pass === 'active', off: this.state.pass !== 'active', go: () => this.setState({ pass: 'active' }) },
+        { label: 'Expired', on: this.state.pass === 'expired', off: this.state.pass !== 'expired', go: () => this.setState({ pass: 'expired' }) }
+      ],
+      passActive: this.state.pass === 'active', passExpired: this.state.pass === 'expired',
+      countdown: 'Valid for ' + mm + ':' + ss,
+
+      saved: this.state.saved,
+      saveAmenity: () => { this.setState({ saved: true }); this.at(2600, () => this.setState({ saved: false })); },
+      adminList: this.state.adminView === 'list', adminEdit: this.state.adminView === 'edit',
+      newAmenity: () => this.setState({ adminView: 'edit', editing: -1, saved: false }),
+      backToList: () => this.setState({ adminView: 'list', saved: false }),
+      editSubtitle: ed ? ed.name + ' · last edited 4 days ago by Priya N.' : 'New amenity · not yet published',
+      configured: this.adminRows().map((a, i) => Object.assign({}, a, {
+        inactive: !a.active, configure: () => this.setState({ adminView: 'edit', editing: i, saved: false })
+      })),
+      formGroups: [
+        { title: 'IDENTITY', fields: [
+          { label: 'Amenity name', isText: true, value: ed ? ed.name : '' },
+          { label: 'Amenity type', isSelect: true, options: typeOpts },
+          { label: 'Description', isText: true, value: ed ? ed.desc : '' }
+        ] },
+        { title: 'LOCATION', fields: [
+          { label: 'Building', isSelect: true, options: ['Tower A', 'Tower B', 'Annexe'] },
+          { label: 'Floor', isText: true, value: ed ? ed.floor : '' },
+          { label: 'Capacity', isText: true, value: ed ? String(ed.cap) : '' },
+          { label: 'Latitude', isText: true, value: '12.9716' },
+          { label: 'Longitude', isText: true, value: '77.5946' }
+        ] },
+        { title: 'SCHEDULE', fields: [
+          { label: 'Working hours', isText: true, value: '08:00 – 20:00' },
+          { label: 'Available days', isSelect: true, options: ['Monday–Friday', 'All days', 'Weekends only'] },
+          { label: 'Minimum duration', isSelect: true, options: ['30 minutes', '1 hour'] },
+          { label: 'Maximum duration', isSelect: true, options: ['2 hours', '4 hours', 'Full day'] },
+          { label: 'Default duration', isSelect: true, options: ['1 hour', '30 minutes'] },
+          { label: 'Allowed durations', isText: true, value: '30m, 1h, 1h30m, 2h' },
+          { label: 'Advance booking window', isSelect: true, options: ['14 days', '7 days', '30 days'] }
+        ] },
+        { title: 'RULES & PRICING', fields: [
+          { label: 'Maximum bookings per user', isText: true, value: '3 active' },
+          { label: 'Booking frequency', isSelect: true, options: ['2 per day', '1 per day', 'Unlimited'] },
+          { label: 'Free / Paid', isSelect: true, options: ed && ed.cost !== '0' ? ['Paid', 'Free'] : ['Free', 'Paid'] },
+          { label: 'Credit cost', isText: true, value: ed ? ed.cost : '0' },
+          { label: 'Eligibility rules', isSelect: true, options: ['All employees', 'Managers and above', 'Named list'] },
+          { label: 'Cancellation policy', isSelect: true, options: ['Free until 30 min before', 'Free until 2 h before', 'Non-refundable'] }
+        ] }
+      ],
+      guidelines: 'Maximum booking duration: 2 hours\nMaximum attendees: 8\nExternal guests: Not allowed\nFood: Not allowed\nAvailable Monday–Friday\nOperating hours: 8 AM–8 PM',
+
+      mHome: this.state.mtab === 'home', mAmenities: this.state.mtab === 'amenities',
+      mBookings: this.state.mtab === 'bookings', mProfile: this.state.mtab === 'profile',
+      mobileNav: [['home', 'Home'], ['amenities', 'Amenities'], ['bookings', 'Bookings'], ['profile', 'Profile']].map(([k, label]) => ({
+        label, on: this.state.mtab === k, off: this.state.mtab !== k, go: () => this.setState({ mtab: k })
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

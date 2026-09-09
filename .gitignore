@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# frontend (Next.js)
+frontend/node_modules
+frontend/.next/
+frontend/out/
+frontend/build
+frontend/.vercel
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+frontend/.env*
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnpm-debug.log*
+
+# unexplained large export, not part of the tracked source
+AmenityOS.html
