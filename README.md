@@ -10,9 +10,13 @@ Instead of navigating a multi-step booking application, an employee can say or t
 
 The agent interprets the request, identifies the amenity, checks relevant rules, checks live availability, validates eligibility and capacity, handles credits for paid amenities, creates the booking when authorized, generates an access credential/QR code, and reports the actual result.
 
+**Live frontend prototype:** https://frontend-five-dusky-47.vercel.app
+
 ## Product thesis
 
-The problem is not that employees cannot book amenities. The problem is that the booking workflow forces users to translate a simple intent into a sequence of UI interactions.
+The problem is not that employees cannot book amenities. The problem is that the booking workflow forces users to translate a simple intent into a sequence of UI interactions:
+
+open app → find building/floor → search amenity → pick date → pick time → pick duration → enter attendees → check eligibility → check price → confirm → retrieve access pass.
 
 AmenityOS changes the interaction model from:
 
@@ -21,6 +25,36 @@ AmenityOS changes the interaction model from:
 to:
 
 **Tell the system what you want → the agent performs the workflow.**
+
+## Product landscape
+
+The frontend (built, deployed, running on mock data) implements eight screens, desktop and mobile:
+
+| Screen | What it does |
+|---|---|
+| **Home** | Hold-to-speak or type a request; watches the agent's request → availability → rules → booking pipeline resolve step by step; shows the resulting confirmation, QR access pass, and upcoming bookings |
+| **AI Assistant** | A guided walkthrough of four non-happy-path resolutions the agent must handle: slot unavailable (offers alternatives), paid amenity (asks for confirmation before charging), insufficient credits (blocks the booking, offers to contact an admin), capacity exceeded (offers a bigger room) |
+| **Amenities** | Browsable catalog of bookable amenities with live-style availability, capacity, and pricing |
+| **My Bookings** | Upcoming and past bookings with status (confirmed / completed / cancelled) |
+| **Credits** | Monthly credit allowance, remaining balance, and a spend ledger |
+| **Admin** | Configure amenities: schedule, capacity, duration rules, eligibility, pricing, and a plain-language guidelines field the agent reads when resolving requests |
+| **Access Pass** | QR credential for an amenity booking, with an active/expired state and countdown |
+| **Profile** | Identity, credit summary, eligibility, and voice preference |
+
+Everything above runs against typed mock data today — no backend exists yet. The next phase implements the backend/agent stack that makes these screens real, against the contracts already specified in `docs/`.
+
+## Tech stack
+
+| Layer | Choice | Status |
+|---|---|---|
+| Frontend | Next.js (App Router), TypeScript, Tailwind CSS | Built, deployed to Vercel |
+| Backend | Python, FastAPI | Specified, not yet implemented |
+| Database | SQLite | Specified, not yet implemented |
+| Vector store | Qdrant (amenity policy/guideline retrieval) | Specified, not yet implemented |
+| LLM | Gemini API | Specified, not yet implemented |
+| Voice | Local speech-to-text (faster-whisper) + browser text-to-speech | Specified, not yet implemented |
+
+No auth, no multi-agent framework, no LangChain — deliberately, see `AGENTS.md`.
 
 ## Core architectural principle
 
@@ -49,6 +83,33 @@ The LLM is not the source of truth and never directly modifies application state
 **Voice:** speech-to-text + text-to-speech
 
 **Physical access:** signed/opaque access token + QR + access verification service
+
+## Repository structure
+
+```
+amenityos/
+  README.md                  this file
+  AGENTS.md                  engineering contract for AI coding agents working on this repo
+  docs/                       full specification (see Documentation map below)
+    archive/                  superseded early drafts, kept for reference only
+  frontend/                  Next.js app (built, deployed)
+  AmenityOS prototype shell-handoff.zip   original Claude Design handoff
+  handoff-extracted/         unpacked copy of the design handoff, for reference
+```
+
+## Running it
+
+**Frontend** (the only implemented component today):
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Then open `http://localhost:3000`.
+
+**Backend, agent, voice, RAG:** not yet implemented. `docs/16-developer-runbook.md` specifies the intended local setup (Qdrant, FastAPI, Gemini key, seed/ingest scripts) for when that work lands — treat it as a target, not a current instruction.
 
 ## MVP capabilities
 
@@ -104,7 +165,7 @@ The LLM is not the source of truth and never directly modifies application state
 
 ## Status
 
-The frontend is independently deployed. Backend/agent components should be implemented against the contracts in this documentation rather than inventing new behavior during implementation.
+The frontend (all 8 screens above) is built and independently deployed against mock data. Backend, agent orchestration, RAG, and voice are fully specified in `docs/` but not yet implemented — that implementation should follow the contracts in this documentation rather than inventing new behavior.
 
 ## Design rule
 
