@@ -27,11 +27,11 @@ async def lifespan(app: FastAPI):
         logger.exception("RAG: guideline ingestion failed at startup")
     try:
         get_recognizer().warm_up()
-        logger.info("Voice: STT model warmed up")
+        logger.info("Voice: STT recognizer ready")
     except Exception:
         # Voice input degrades (transcription fails per-request) but the
         # rest of the app must still boot.
-        logger.exception("Voice: STT model warm-up failed at startup")
+        logger.exception("Voice: STT recognizer warm-up failed at startup")
     yield
 
 

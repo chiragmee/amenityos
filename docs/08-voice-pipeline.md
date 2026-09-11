@@ -31,16 +31,24 @@ User
 ## Speech-to-text
 
 MVP:
-local faster-whisper.
+started with local faster-whisper, per the original plan below. Switched
+to Gemini's audio understanding (2026-09-12) after measuring ~30s per
+short clip on the deployed host's free-tier CPU (0.1 vCPU) — confirmed via
+repeated live requests that it was consistent, correctly-transcribing,
+CPU-bound slowness, not a cold-start or functional bug. Gemini transcribes
+the same clips in ~1-3s and was more accurate on longer/harder phrases in
+a head-to-head test. This is exactly the swap the interface below was
+designed to allow.
 
-The STT implementation should be behind an interface:
+The STT implementation lives behind an interface:
 
 ```text
 SpeechRecognizer
   -> transcribe(audio) -> text
 ```
 
-This allows a cloud STT provider to be introduced later.
+This allows the underlying provider to change (as it did) without
+touching the router or the agent.
 
 ## VAD
 
