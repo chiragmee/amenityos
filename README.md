@@ -41,15 +41,15 @@ The frontend (built, deployed, running on mock data) implements eight screens, d
 | **Access Pass** | QR credential for an amenity booking, with an active/expired state and countdown |
 | **Profile** | Identity, credit summary, eligibility, and voice preference |
 
-Everything above runs against typed mock data today — no backend exists yet. The next phase implements the backend/agent stack that makes these screens real, against the contracts already specified in `docs/`.
+The frontend still runs against typed mock data — it isn't wired to the backend yet. The backend's deterministic booking engine (below) is built and tested; connecting the frontend to it, and then layering the agent/voice/RAG stack on top, are the next phases.
 
 ## Tech stack
 
 | Layer | Choice | Status |
 |---|---|---|
-| Frontend | Next.js (App Router), TypeScript, Tailwind CSS | Built, deployed to Vercel |
-| Backend | Python, FastAPI | Specified, not yet implemented |
-| Database | SQLite | Specified, not yet implemented |
+| Frontend | Next.js (App Router), TypeScript, Tailwind CSS | Built, deployed to Vercel (mock data, not yet wired to the backend) |
+| Backend | Python, FastAPI, SQLModel | Built — deterministic booking engine, 14 passing tests, not yet exposed to the frontend or an agent |
+| Database | SQLite | Built |
 | Vector store | Qdrant (amenity policy/guideline retrieval) | Specified, not yet implemented |
 | LLM | Gemini API | Specified, not yet implemented |
 | Voice | Local speech-to-text (faster-whisper) + browser text-to-speech | Specified, not yet implemented |
@@ -90,16 +90,18 @@ The LLM is not the source of truth and never directly modifies application state
 amenityos/
   README.md                  this file
   AGENTS.md                  engineering contract for AI coding agents working on this repo
+  PROGRESS.md                one-line-per-change log of what's been built and why
   docs/                       full specification (see Documentation map below)
     archive/                  superseded early drafts, kept for reference only
-  frontend/                  Next.js app (built, deployed)
+  frontend/                  Next.js app (built, deployed, mock data)
+  backend/                   FastAPI + SQLModel deterministic booking engine (built, tested)
   AmenityOS prototype shell-handoff.zip   original Claude Design handoff
   handoff-extracted/         unpacked copy of the design handoff, for reference
 ```
 
 ## Running it
 
-**Frontend** (the only implemented component today):
+**Frontend:**
 
 ```bash
 cd frontend
@@ -109,7 +111,21 @@ npm run dev
 
 Then open `http://localhost:3000`.
 
-**Backend, agent, voice, RAG:** not yet implemented. `docs/16-developer-runbook.md` specifies the intended local setup (Qdrant, FastAPI, Gemini key, seed/ingest scripts) for when that work lands — treat it as a target, not a current instruction.
+**Backend:**
+
+```bash
+cd backend
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python -m app.seed        # demo users, amenities, bookings
+uvicorn app.main:app --reload
+```
+
+API docs at `http://localhost:8000/docs`. Run `python -m pytest -v` for the
+14-test suite. See `backend/README.md` for what's deliberately simplified
+and where it diverges from `docs/14-api-contracts.md`.
+
+**Agent, voice, RAG:** not yet implemented. `docs/16-developer-runbook.md` specifies the intended local setup (Qdrant, Gemini key, ingest scripts) for when that work lands — treat it as a target, not a current instruction.
 
 ## MVP capabilities
 
@@ -165,7 +181,7 @@ Then open `http://localhost:3000`.
 
 ## Status
 
-The frontend (all 8 screens above) is built and independently deployed against mock data. Backend, agent orchestration, RAG, and voice are fully specified in `docs/` but not yet implemented — that implementation should follow the contracts in this documentation rather than inventing new behavior.
+The frontend (all 8 screens above) is built and independently deployed against mock data. The backend's deterministic booking engine is built and tested (validation pipeline, atomic paid bookings, idempotency) but not yet wired to the frontend or to an LLM. Agent orchestration, RAG, and voice are fully specified in `docs/` but not yet implemented — that implementation should follow the contracts in this documentation rather than inventing new behavior.
 
 ## Design rule
 

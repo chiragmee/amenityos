@@ -15,7 +15,13 @@ frontend/yarn-debug.log*
 frontend/yarn-error.log*
 frontend/.pnpm-debug.log*
 
-# unexplained large export, not part of the tracked source
-AmenityOS.html
 .vercel
 .env*
+
+# backend (Python)
+backend/.venv
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.db
+backend/.pytest_cache/
+backend/*.egg-info/

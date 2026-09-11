@@ -2,9 +2,15 @@
 
 This document defines the service boundary between the frontend and backend.
 
+**Status:** the routes below are implemented in `backend/` (deterministic
+booking engine only — no `/agent` or `/voice` routes yet, since the LLM and
+STT are not connected). See `backend/README.md` for how this diverged from
+an earlier draft of this doc (no `/api` prefix, a couple of endpoint shapes
+changed, two endpoints added).
+
 ## Health
 
-`GET /api/health`
+`GET /health`
 
 Response:
 
@@ -14,78 +20,59 @@ Response:
 }
 ```
 
-## Agent
+## Users
 
-`POST /api/agent/chat`
+`GET /users/{user_id}`
 
-Request:
+`GET /users/{user_id}/bookings`
 
-```json
-{
-  "session_id": "session_001",
-  "user_id": "usr_001",
-  "message": "Book Emerald at 3 PM for five people."
-}
-```
-
-Response:
-
-```json
-{
-  "message": "Done. Emerald Meeting Room is booked from 3:00 to 4:00 PM.",
-  "status": "completed",
-  "booking": {
-    "booking_id": "bk_123",
-    "amenity_id": "amenity_emerald"
-  }
-}
-```
-
-## Voice transcription
-
-`POST /api/voice/transcribe`
-
-Input:
-audio multipart/form-data
-
-Response:
-
-```json
-{
-  "text": "Book Emerald Meeting Room today at 3 PM for five people."
-}
-```
+`GET /users/{user_id}/credits`
 
 ## Amenities
 
-`GET /api/amenities`
+`GET /amenities`
 
-`GET /api/amenities/{amenity_id}`
+`GET /amenities/{amenity_id}`
+
+`GET /amenities/{amenity_id}/policy` — returns the amenity's guideline
+documents verbatim. No RAG/semantic retrieval yet; that lands with `docs/07-rag.md`.
 
 ## Availability
 
-`POST /api/availability/check`
+`POST /availability/check`
 
 Request:
 
 ```json
 {
   "amenity_id": "amenity_emerald",
-  "start_time": "2026-09-09T15:00:00+05:30",
+  "start_time": "2026-09-09T15:00:00Z",
   "duration_minutes": 60,
   "attendee_count": 5
 }
 ```
 
+Response:
+
+```json
+{
+  "available": false,
+  "conflicts": [
+    { "start_time": "2026-09-09T15:00:00", "end_time": "2026-09-09T16:00:00" }
+  ]
+}
+```
+
 ## Booking validation
 
-`POST /api/bookings/validate`
+`POST /bookings/validate`
 
-Returns whether the requested booking is valid before creation.
+Returns whether the requested booking is valid before creation, along with
+cost/balance info — without creating anything.
 
 ## Booking creation
 
-`POST /api/bookings`
+`POST /bookings`
 
 Request:
 
@@ -93,24 +80,27 @@ Request:
 {
   "user_id": "usr_001",
   "amenity_id": "amenity_emerald",
-  "start_time": "2026-09-09T15:00:00+05:30",
+  "start_time": "2026-09-09T15:00:00Z",
   "duration_minutes": 60,
   "attendee_ids": [],
   "idempotency_key": "req_123"
 }
 ```
 
-## User bookings
+Replaying the same `idempotency_key` returns the original booking instead
+of creating a second one.
 
-`GET /api/users/{user_id}/bookings`
-
-## Credits
-
-`GET /api/users/{user_id}/credits`
+`GET /bookings/{booking_id}`
 
 ## Access verification
 
-`GET /api/access/verify/{token}`
+`POST /access/verify`
+
+Request:
+
+```json
+{ "token": "bk_123.<hmac-signature>" }
+```
 
 Success:
 
@@ -119,7 +109,7 @@ Success:
   "allowed": true,
   "booking_id": "bk_123",
   "amenity": "Emerald Meeting Room",
-  "valid_until": "2026-09-09T16:00:00+05:30"
+  "valid_until": "2026-09-09T16:00:00"
 }
 ```
 
@@ -132,9 +122,17 @@ Failure:
 }
 ```
 
-## Error format
+`reason` is one of `TOKEN_INVALID`, `TOKEN_EXPIRED`, `BOOKING_CANCELLED`.
 
-Prefer:
+## Not yet implemented
+
+These are specified elsewhere in `docs/` but have no route yet, pending the
+agent/voice work:
+
+- `POST /agent/chat` (`docs/03-system-prompt.md`, `docs/05-tool-contracts.md`)
+- `POST /voice/transcribe` (`docs/08-voice-pipeline.md`)
+
+## Error format
 
 ```json
 {
@@ -145,4 +143,8 @@ Prefer:
 }
 ```
 
-Error codes should be stable enough for frontend behavior.
+Error codes in use: `USER_NOT_FOUND`, `USER_INACTIVE`, `AMENITY_NOT_FOUND`,
+`AMENITY_INACTIVE`, `NOT_ELIGIBLE`, `CAPACITY_EXCEEDED`,
+`OUTSIDE_WORKING_HOURS`, `INVALID_DURATION`,
+`ADVANCE_BOOKING_WINDOW_EXCEEDED`, `BOOKING_LIMIT_EXCEEDED`,
+`SLOT_UNAVAILABLE`, `INSUFFICIENT_CREDITS`, `BOOKING_NOT_FOUND`.

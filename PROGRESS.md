@@ -1,0 +1,37 @@
+# Progress Log
+
+One line per change: what + why + files touched. Newest entries at the top.
+
+---
+
+**2026-09-11** — Built the backend: FastAPI + SQLModel deterministic booking engine, 10 entities, 12 routes, seed data (3 users, 7 amenities), 14 passing tests. Updated `docs/14-api-contracts.md` and added `backend/README.md` to document where the build diverged from the original contract doc (no `/api` prefix, `POST /access/verify` instead of `GET .../verify/{token}`, two added endpoints). Updated root README's stack table, repo structure, and status to reflect it. No LLM/RAG/voice connected yet, per instruction — this proves the deterministic engine alone.
+Why: prove the booking engine is correct before adding any agent/LLM layer on top of it.
+Files: `backend/` (all), `docs/14-api-contracts.md`, `README.md`
+
+**2026-09-11** — Removed `AmenityOS.html` (unexplained, gitignored, unreferenced export) from the project folder.
+Why: repo cleanup — requested, no longer useful.
+Files: deleted `AmenityOS.html`; trimmed the now-stale `.gitignore` line for it
+
+**2026-09-09** — Initialized progress log.
+Why: tracking project state in files instead of conversation memory, per CLAUDE.md.
+Files: `PROGRESS.md`
+
+**2026-09-09** — Expanded README with product landscape, tech stack, repo structure, run instructions.
+Why: the doc-derived README was too abstract for an outside visitor to know what the repo contains.
+Files: `README.md`
+
+**2026-09-09** — Replaced the six early draft specs with the full AmenityOS agent documentation set (`AGENTS.md` + `docs/00`–`18`); moved drafts to `docs/archive/`.
+Why: the new set (from the Claude Design agent-docs export) is a complete, authoritative rewrite of the same ground the drafts covered.
+Files: `AGENTS.md`, `docs/00-documentation-index.md`..`docs/18-roadmap.md`, `docs/archive/*`
+
+**2026-09-09** — Pushed the repo to GitHub (`chiragmee/amenityos`, public) and deployed `frontend/` to Vercel production.
+Why: get the frontend live and the repo shareable.
+Files: `.gitignore`; Vercel project linked with root directory `frontend`, auto-deploy on push to `main`.
+
+**2026-09-09** — Built the full frontend prototype (Next.js + TypeScript + Tailwind) against mock data: all 8 screens (Home/voice booking, AI Assistant, Amenities, My Bookings, Credits, Admin, Access Pass, Profile), responsive shell, shared credits/bookings state.
+Why: reproduce the Claude Design handoff (`AmenityOS.dc.html`) as a real app before building the backend.
+Files: `frontend/` (all)
+
+**2026-09-09** — Wrote six initial spec docs (product/frontend/backend/agent/data-model/tool) from the design handoff.
+Why: ground the frontend build and the eventual backend in a written spec before coding, per the three-gate workflow.
+Files: now archived at `docs/archive/*`
