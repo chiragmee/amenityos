@@ -22,7 +22,8 @@ from sqlmodel import Session, select
 
 from .. import booking_engine as engine
 from ..errors import AppError
-from ..models import Amenity, AmenityGuideline, Booking, User
+from ..models import Amenity, Booking, User
+from ..rag.retrieve import retrieve as rag_retrieve
 
 
 def _dt(value: str) -> datetime:
@@ -83,15 +84,15 @@ def get_amenity_policy(session: Session, amenity_id: str, question: Optional[str
         engine.get_amenity_or_404(session, amenity_id)
     except AppError as err:
         return {"error_code": err.code.value, "message": err.message}
-    guidelines = session.exec(
-        select(AmenityGuideline).where(AmenityGuideline.amenity_id == amenity_id)
-    ).all()
-    # No semantic retrieval yet (Phase B / docs/07-rag.md) — full guideline
-    # text is returned as-is rather than a top-k relevant chunk.
+    # Real semantic retrieval per docs/07-rag.md: top-k relevant chunks,
+    # scoped to this amenity so an Emerald question can't surface Gym
+    # policy. Falls back to a neutral query when the model didn't pass a
+    # specific question (still amenity-scoped, still top-k, not a dump).
+    chunks = rag_retrieve(question or "amenity guidelines and rules", amenity_id=amenity_id)
     return {
         "amenity_id": amenity_id,
-        "sources": [{"document": g.document_name} for g in guidelines],
-        "policy_context": "\n\n".join(g.content for g in guidelines) or "No guidelines on file.",
+        "sources": [{"document": c["document_name"], "chunk_id": c["chunk_id"]} for c in chunks],
+        "policy_context": "\n\n".join(c["text"] for c in chunks) or "No guidelines on file.",
     }
 
 

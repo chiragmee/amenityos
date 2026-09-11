@@ -1,16 +1,29 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlmodel import Session
 
-from .database import init_db
+from .database import engine, init_db
 from .errors import AppError, app_error_handler
+from .rag.ingest import ingest_guidelines
 from .routers import access, agent, amenities, availability, bookings, health, users
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    try:
+        with Session(engine) as session:
+            count = ingest_guidelines(session)
+        logger.info("RAG: indexed %d guideline chunks", count)
+    except Exception:
+        # Policy Q&A degrades (get_amenity_policy returns no chunks) but
+        # the rest of the app must still boot — see docs/17-failure-modes.md.
+        logger.exception("RAG: guideline ingestion failed at startup")
     yield
 
 

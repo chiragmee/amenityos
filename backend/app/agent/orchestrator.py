@@ -10,12 +10,10 @@ couple this app's history to Google's retention policy.
 """
 
 import logging
-import os
 import time
 import uuid
 from typing import Callable
 
-from google import genai
 from google.genai import errors as genai_errors
 from google.genai import types
 from sqlmodel import Session, select
@@ -23,6 +21,7 @@ from sqlmodel import Session, select
 from . import tools as agent_tools
 from .schemas import AgentBookingRef, AgentChatRequest, AgentChatResponse
 from .system_prompt import build_system_instruction
+from ..gemini_client import get_client
 from ..models import AgentMessage, AgentMessageRole, AgentSession, utcnow
 
 logger = logging.getLogger(__name__)
@@ -38,19 +37,6 @@ MODEL_NAME = "gemini-flash-lite-latest"
 MAX_TOOL_ROUNDS = 6
 MAX_API_RETRIES = 2
 RETRY_BACKOFF_SECONDS = 2
-
-_client: genai.Client | None = None
-
-
-def _get_client() -> genai.Client:
-    global _client
-    if _client is None:
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if not api_key:
-            raise RuntimeError("GEMINI_API_KEY is not set")
-        _client = genai.Client(api_key=api_key)
-    return _client
-
 
 def _make_tool_functions(db: Session) -> list[Callable]:
     """LLM-facing wrappers: same names/behavior as agent_tools.py, minus
@@ -223,7 +209,7 @@ def run_turn(db: Session, request: AgentChatRequest) -> AgentChatResponse:
     db.add(AgentMessage(session_id=agent_session.id, role=AgentMessageRole.user, content=request.message))
     db.commit()
 
-    client = _get_client()
+    client = get_client()
     tool_functions = _make_tool_functions(db)
     declarations = [
         types.FunctionDeclaration.from_callable(client=client, callable=fn) for fn in tool_functions
