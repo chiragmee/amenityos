@@ -22,7 +22,7 @@ from . import tools as agent_tools
 from .schemas import AgentBookingRef, AgentChatRequest, AgentChatResponse
 from .system_prompt import build_system_instruction
 from ..gemini_client import get_client
-from ..models import AgentMessage, AgentMessageRole, AgentSession, utcnow
+from ..models import AgentMessage, AgentMessageRole, AgentSession, AgentTrace, utcnow
 
 logger = logging.getLogger(__name__)
 
@@ -38,18 +38,25 @@ MAX_TOOL_ROUNDS = 6
 MAX_API_RETRIES = 2
 RETRY_BACKOFF_SECONDS = 2
 
-def _make_tool_functions(db: Session) -> list[Callable]:
+def _make_tool_functions(db: Session, caller_user_id: str) -> list[Callable]:
     """LLM-facing wrappers: same names/behavior as agent_tools.py, minus
     the `session` parameter (bound here via closure so it never appears
-    in the schema Gemini sees)."""
+    in the schema Gemini sees).
 
-    def get_user_profile(user_id: str) -> dict:
-        """Retrieve profile information for a user.
+    `user_id` is likewise bound to the authenticated caller rather than
+    accepted as an LLM-suppliable argument, for every tool whose contract
+    (docs/05) is scoped to "the current user" — get_user_profile,
+    check_eligibility, calculate_booking_cost, create_booking. Letting the
+    model choose an arbitrary user_id here would mean a prompt-injected or
+    simply mistaken tool call could read another user's profile/credits or
+    create a booking (and deduct credits) in their name — the system
+    prompt's privacy rules are not a substitute for this. get_booking and
+    generate_access_token take a booking_id instead, so they get an
+    ownership check in agent/tools.py rather than an argument removal."""
 
-        Args:
-            user_id: The id of the user to look up.
-        """
-        return agent_tools.get_user_profile(db, user_id)
+    def get_user_profile() -> dict:
+        """Retrieve profile information for the current user."""
+        return agent_tools.get_user_profile(db, caller_user_id)
 
     def search_amenities(query: str = "", building: str = "", attendee_count: int = 0) -> dict:
         """Find amenities matching a name or type, optionally filtered by building or attendee count.
@@ -70,14 +77,13 @@ def _make_tool_functions(db: Session) -> list[Callable]:
         """
         return agent_tools.get_amenity_policy(db, amenity_id, question or None)
 
-    def check_eligibility(user_id: str, amenity_id: str) -> dict:
-        """Check whether a user is eligible to book a specific amenity.
+    def check_eligibility(amenity_id: str) -> dict:
+        """Check whether the current user is eligible to book a specific amenity.
 
         Args:
-            user_id: The user's id.
             amenity_id: The amenity's id.
         """
-        return agent_tools.check_eligibility(db, user_id, amenity_id)
+        return agent_tools.check_eligibility(db, caller_user_id, amenity_id)
 
     def check_availability(
         amenity_id: str, start_time: str, duration_minutes: int, attendee_count: int
@@ -92,32 +98,27 @@ def _make_tool_functions(db: Session) -> list[Callable]:
         """
         return agent_tools.check_availability(db, amenity_id, start_time, duration_minutes, attendee_count)
 
-    def calculate_booking_cost(
-        user_id: str, amenity_id: str, start_time: str, duration_minutes: int
-    ) -> dict:
-        """Calculate the credit cost of a booking and the user's current balance.
+    def calculate_booking_cost(amenity_id: str, start_time: str, duration_minutes: int) -> dict:
+        """Calculate the credit cost of a booking and the current user's balance.
 
         Args:
-            user_id: The user's id.
             amenity_id: The amenity's id.
             start_time: ISO 8601 timestamp with no timezone offset.
             duration_minutes: Requested booking duration in minutes.
         """
-        return agent_tools.calculate_booking_cost(db, user_id, amenity_id, start_time, duration_minutes)
+        return agent_tools.calculate_booking_cost(db, caller_user_id, amenity_id, start_time, duration_minutes)
 
     def create_booking(
-        user_id: str,
         amenity_id: str,
         start_time: str,
         duration_minutes: int,
         attendee_count: int,
         idempotency_key: str,
     ) -> dict:
-        """Create a booking. State-changing — only call after all validation has passed and,
-        for paid amenities, the user has explicitly confirmed the cost.
+        """Create a booking for the current user. State-changing — only call after all
+        validation has passed and, for paid amenities, the user has explicitly confirmed the cost.
 
         Args:
-            user_id: The user's id.
             amenity_id: The amenity's id.
             start_time: ISO 8601 timestamp with no timezone offset.
             duration_minutes: Requested booking duration in minutes.
@@ -125,24 +126,24 @@ def _make_tool_functions(db: Session) -> list[Callable]:
             idempotency_key: A unique key for this specific booking request.
         """
         return agent_tools.create_booking(
-            db, user_id, amenity_id, start_time, duration_minutes, attendee_count, idempotency_key
+            db, caller_user_id, amenity_id, start_time, duration_minutes, attendee_count, idempotency_key
         )
 
     def get_booking(booking_id: str) -> dict:
-        """Retrieve details of an existing booking.
+        """Retrieve details of an existing booking belonging to the current user.
 
         Args:
             booking_id: The booking's id.
         """
-        return agent_tools.get_booking(db, booking_id)
+        return agent_tools.get_booking(db, booking_id, caller_user_id)
 
     def generate_access_token(booking_id: str) -> dict:
-        """Retrieve the access credential for a confirmed booking.
+        """Retrieve the access credential for a confirmed booking belonging to the current user.
 
         Args:
             booking_id: The booking's id.
         """
-        return agent_tools.generate_access_token(db, booking_id)
+        return agent_tools.generate_access_token(db, booking_id, caller_user_id)
 
     return [
         get_user_profile,
@@ -184,11 +185,16 @@ def _resolve_session(db: Session, request: AgentChatRequest) -> AgentSession:
     return agent_session
 
 
+RATE_LIMIT_BACKOFF_SECONDS = 20
+
+
 def _send_with_retry(chat, content) -> "types.GenerateContentResponse | None":
-    """Gemini's servers occasionally return transient 503s under load.
-    Retry briefly; return None (caller falls back to a safe message) if
-    it still fails — per docs/17-failure-modes.md's LLM failure handling,
-    never let this surface as a raw 500 to the user."""
+    """Gemini's servers occasionally return transient 503s under load, and
+    the free tier's per-minute request quota can also trip a 429 under
+    ordinary bursty traffic (an eval run surfaced this — it wasn't only a
+    theoretical case). Retry briefly on both; return None (caller falls
+    back to a safe message) if it still fails — per docs/17-failure-modes.md's
+    LLM failure handling, never let this surface as a raw 500 to the user."""
     last_error = None
     for attempt in range(MAX_API_RETRIES + 1):
         try:
@@ -198,11 +204,19 @@ def _send_with_retry(chat, content) -> "types.GenerateContentResponse | None":
             logger.warning("Gemini ServerError on attempt %d: %s", attempt + 1, exc)
             if attempt < MAX_API_RETRIES:
                 time.sleep(RETRY_BACKOFF_SECONDS * (attempt + 1))
+        except genai_errors.ClientError as exc:
+            if exc.code != 429:
+                raise  # a real client-side bug (bad request, auth, etc.) — don't mask it
+            last_error = exc
+            logger.warning("Gemini rate-limited (429) on attempt %d: %s", attempt + 1, exc)
+            if attempt < MAX_API_RETRIES:
+                time.sleep(RATE_LIMIT_BACKOFF_SECONDS)
     logger.error("Gemini unavailable after retries: %s", last_error)
     return None
 
 
 def run_turn(db: Session, request: AgentChatRequest) -> AgentChatResponse:
+    turn_start = time.monotonic()
     agent_session = _resolve_session(db, request)
     history = _load_history(db, agent_session.id)
 
@@ -210,7 +224,7 @@ def run_turn(db: Session, request: AgentChatRequest) -> AgentChatResponse:
     db.commit()
 
     client = get_client()
-    tool_functions = _make_tool_functions(db)
+    tool_functions = _make_tool_functions(db, request.user_id)
     declarations = [
         types.FunctionDeclaration.from_callable(client=client, callable=fn) for fn in tool_functions
     ]
@@ -226,9 +240,25 @@ def run_turn(db: Session, request: AgentChatRequest) -> AgentChatResponse:
         ),
     )
 
+    # docs/12-observability.md's per-turn trace — accumulated as the loop runs.
+    input_tokens = 0
+    output_tokens = 0
+    tool_call_traces: list[dict] = []
+    retrieval_query: str | None = None
+    retrieved_chunk_ids: list[str] | None = None
+
+    def _record_usage(resp) -> None:
+        nonlocal input_tokens, output_tokens
+        usage = getattr(resp, "usage_metadata", None)
+        if usage is not None:
+            input_tokens += usage.prompt_token_count or 0
+            output_tokens += usage.candidates_token_count or 0
+
     response = _send_with_retry(chat, request.message)
     booking_ref: AgentBookingRef | None = None
     degraded = response is None
+    if response is not None:
+        _record_usage(response)
 
     if response is not None:
         for _ in range(MAX_TOOL_ROUNDS):
@@ -238,6 +268,7 @@ def run_turn(db: Session, request: AgentChatRequest) -> AgentChatResponse:
             parts = []
             for call in calls:
                 fn = functions_by_name.get(call.name)
+                call_start = time.monotonic()
                 if fn is None:
                     result = {"error_code": "UNKNOWN_TOOL", "message": f"No such tool: {call.name}"}
                 else:
@@ -245,6 +276,31 @@ def run_turn(db: Session, request: AgentChatRequest) -> AgentChatResponse:
                         result = fn(**(call.args or {}))
                     except Exception as exc:  # tool failures must reach the model, not crash the turn
                         result = {"error_code": "TOOL_EXCEPTION", "message": str(exc)}
+                call_duration_ms = int((time.monotonic() - call_start) * 1000)
+
+                error_code = result.get("error_code") if isinstance(result, dict) else None
+                booking_id = (
+                    result.get("booking_id")
+                    if call.name == "create_booking" and isinstance(result, dict)
+                    else None
+                )
+                trace_entry = {
+                    "tool_name": call.name,
+                    "duration_ms": call_duration_ms,
+                    "result_status": "error" if error_code else "ok",
+                    "error_code": error_code,
+                    "booking_id": booking_id,
+                }
+                if call.name == "check_availability" and isinstance(result, dict) and "available" in result:
+                    trace_entry["available"] = result["available"]
+                    trace_entry["alternatives_offered"] = len(result.get("alternatives") or [])
+                tool_call_traces.append(trace_entry)
+
+                if call.name == "get_amenity_policy" and isinstance(result, dict) and result.get("sources"):
+                    retrieval_query = (call.args or {}).get("question") or (call.args or {}).get("amenity_id")
+                    retrieved_chunk_ids = [
+                        s["chunk_id"] for s in result["sources"] if s.get("chunk_id")
+                    ]
 
                 if call.name == "create_booking" and isinstance(result, dict) and result.get("success"):
                     token_result = functions_by_name["generate_access_token"](booking_id=result["booking_id"])
@@ -255,6 +311,7 @@ def run_turn(db: Session, request: AgentChatRequest) -> AgentChatResponse:
             if response is None:
                 degraded = True
                 break
+            _record_usage(response)
 
     if degraded:
         # booking_ref may still be set here if a tool call succeeded before
@@ -271,6 +328,25 @@ def run_turn(db: Session, request: AgentChatRequest) -> AgentChatResponse:
     db.add(AgentMessage(session_id=agent_session.id, role=AgentMessageRole.assistant, content=final_text))
     agent_session.updated_at = utcnow()
     db.add(agent_session)
+
+    db.add(
+        AgentTrace(
+            id=f"trace_{uuid.uuid4().hex[:12]}",
+            session_id=agent_session.id,
+            user_id=request.user_id,
+            user_message=request.message,
+            model=MODEL_NAME,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            tool_calls=tool_call_traces,
+            retrieval_query=retrieval_query,
+            retrieved_chunk_ids=retrieved_chunk_ids,
+            final_response=final_text,
+            success=not degraded,
+            error_code="LLM_UNAVAILABLE" if degraded else None,
+            total_latency_ms=int((time.monotonic() - turn_start) * 1000),
+        )
+    )
     db.commit()
 
     return AgentChatResponse(session_id=agent_session.id, message=final_text, booking=booking_ref)

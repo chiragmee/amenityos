@@ -8,7 +8,7 @@ from sqlmodel import Session
 from .database import engine, init_db
 from .errors import AppError, app_error_handler
 from .rag.ingest import ingest_guidelines
-from .routers import access, agent, amenities, availability, bookings, health, users, voice
+from .routers import access, admin, agent, amenities, availability, bookings, health, users, voice
 from .voice.recognizer import get_recognizer
 
 logger = logging.getLogger(__name__)
@@ -54,3 +54,4 @@ app.include_router(bookings.router)
 app.include_router(access.router)
 app.include_router(agent.router)
 app.include_router(voice.router)
+app.include_router(admin.router)

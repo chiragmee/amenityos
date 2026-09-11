@@ -7,6 +7,7 @@ export const sidebarNav = [
   { href: "/credits", label: "Credits" },
   { rule: true as const },
   { href: "/admin", label: "Admin" },
+  { href: "/admin/traces", label: "Agent traces" },
 ];
 
 export const mobileTabs = [
@@ -23,6 +24,7 @@ const crumbs: Record<string, string> = {
   "/bookings": "My Bookings",
   "/credits": "Credits",
   "/admin": "Admin",
+  "/admin/traces": "Admin / Agent traces",
   "/pass": "My Bookings / Access pass",
   "/profile": "Profile",
 };

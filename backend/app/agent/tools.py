@@ -207,10 +207,15 @@ def create_booking(
     }
 
 
-def get_booking(session: Session, booking_id: str) -> dict:
+def get_booking(session: Session, booking_id: str, caller_user_id: str) -> dict:
     booking = session.get(Booking, booking_id)
     if booking is None:
         return {"error_code": "BOOKING_NOT_FOUND", "message": f"No booking with id '{booking_id}'."}
+    if booking.user_id != caller_user_id:
+        # docs/03's PRIVACY rule ("do not reveal another user's bookings")
+        # enforced here, not just requested of the model — an eval run
+        # (docs/11) surfaced that this was previously unchecked.
+        return {"error_code": "ACCESS_DENIED", "message": "That booking does not belong to you."}
     return {
         "booking_id": booking.id,
         "amenity_id": booking.amenity_id,
@@ -221,12 +226,14 @@ def get_booking(session: Session, booking_id: str) -> dict:
     }
 
 
-def generate_access_token(session: Session, booking_id: str) -> dict:
+def generate_access_token(session: Session, booking_id: str, caller_user_id: str) -> dict:
     # create_booking already issues a token — this returns the existing
     # one rather than minting a second, per docs/19's tool-mapping note.
     booking = session.get(Booking, booking_id)
     if booking is None:
         return {"error_code": "BOOKING_NOT_FOUND", "message": f"No booking with id '{booking_id}'."}
+    if booking.user_id != caller_user_id:
+        return {"error_code": "ACCESS_DENIED", "message": "That booking does not belong to you."}
     return {
         "token": booking.access_token_id,
         "valid_from": booking.start_time.isoformat(),

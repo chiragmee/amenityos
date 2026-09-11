@@ -7,6 +7,9 @@ import type {
   BackendBooking,
   BackendCredits,
   BackendErrorBody,
+  BackendMetrics,
+  BackendTraceDetail,
+  BackendTraceSummary,
   BackendUser,
   BackendValidateResult,
 } from "./backend-types";
@@ -140,6 +143,18 @@ export function agentChat(payload: { session_id: string | null; user_id: string;
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export function getTraces(limit = 50) {
+  return request<BackendTraceSummary[]>(`/admin/traces?limit=${limit}`);
+}
+
+export function getTrace(traceId: string) {
+  return request<BackendTraceDetail>(`/admin/traces/${traceId}`);
+}
+
+export function getMetrics() {
+  return request<BackendMetrics>("/admin/metrics");
 }
 
 export async function transcribeAudio(blob: Blob): Promise<string> {

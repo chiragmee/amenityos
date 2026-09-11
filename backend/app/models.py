@@ -176,6 +176,30 @@ class AgentMessage(SQLModel, table=True):
     timestamp: datetime = Field(default_factory=utcnow)
 
 
+class AgentTrace(SQLModel, table=True):
+    """One row per agent turn, per docs/12-observability.md's "Agent trace"
+    fields — not the same thing as AuditLog (that's the booking-engine's
+    business audit trail; this is AI/ops observability of the agent loop
+    itself: tokens, tool latencies, retrieval, and failure modes)."""
+
+    id: str = Field(primary_key=True)
+    session_id: str = Field(foreign_key="agentsession.id", index=True)
+    user_id: str = Field(foreign_key="user.id", index=True)
+    timestamp: datetime = Field(default_factory=utcnow)
+    user_message: str
+    model: str
+    input_tokens: int = 0
+    output_tokens: int = 0
+    # Each entry: {tool_name, duration_ms, result_status, error_code, booking_id}
+    tool_calls: list[dict] = Field(default_factory=list, sa_column=Column(JSON))
+    retrieval_query: Optional[str] = None
+    retrieved_chunk_ids: Optional[list[str]] = Field(default=None, sa_column=Column(JSON))
+    final_response: str
+    success: bool
+    error_code: Optional[str] = None
+    total_latency_ms: int = 0
+
+
 class AuditLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[str] = Field(default=None, foreign_key="user.id")

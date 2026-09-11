@@ -108,3 +108,53 @@ export interface BackendAgentChatResponse {
   message: string;
   booking: { id: string; access_token: string | null } | null;
 }
+
+export interface BackendToolCall {
+  tool_name: string;
+  duration_ms: number;
+  result_status: string;
+  error_code: string | null;
+  booking_id: string | null;
+  available: boolean | null;
+  alternatives_offered: number | null;
+}
+
+export interface BackendTraceSummary {
+  id: string;
+  session_id: string;
+  user_id: string;
+  timestamp: string;
+  user_message: string;
+  final_response: string;
+  success: boolean;
+  error_code: string | null;
+  total_latency_ms: number;
+  tool_call_count: number;
+}
+
+export interface BackendTraceDetail extends BackendTraceSummary {
+  model: string;
+  input_tokens: number;
+  output_tokens: number;
+  tool_calls: BackendToolCall[];
+  retrieval_query: string | null;
+  retrieved_chunk_ids: string[] | null;
+}
+
+export interface BackendMetrics {
+  total_requests: number;
+  agent_bookings_created: number;
+  paid_agent_bookings: number;
+  free_agent_bookings: number;
+  average_booking_completion_ms: number | null;
+  unavailable_slot_count: number;
+  alternative_recommendation_rate: number | null;
+  average_tool_calls_per_request: number;
+  average_input_tokens: number;
+  average_output_tokens: number;
+  retrieval_count: number;
+  average_retrieval_latency_ms: number | null;
+  p50_latency_ms: number | null;
+  p95_latency_ms: number | null;
+  error_rate: number;
+}
