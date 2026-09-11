@@ -22,7 +22,7 @@ The user often knows the desired outcome from the beginning.
 
 ## Solution
 
-AmenityOS provides a conversational interface where the employee expresses the desired outcome in natural language.
+Nookly provides a conversational interface where the employee expresses the desired outcome in natural language.
 
 Example:
 

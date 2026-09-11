@@ -1,4 +1,4 @@
-# AmenityOS — Tool Spec
+# Nookly — Tool Spec
 
 Discrete tools the agent orchestrator (`agent-spec.md`) calls. Each tool is
 a plain Python function with a typed signature — exposed to Gemini as

@@ -1,6 +1,6 @@
 # 06 — Memory and Context Strategy
 
-AmenityOS uses different memory mechanisms for different problems.
+Nookly uses different memory mechanisms for different problems.
 
 ## 1. Session memory
 

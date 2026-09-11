@@ -4,6 +4,7 @@ import { useState } from "react";
 import * as api from "@/lib/api-client";
 import { useAppState } from "@/lib/app-state";
 import { AmenityForm } from "@/components/admin/amenity-form";
+import { StatusPill } from "@/components/ui/status-pill";
 
 export default function AdminPage() {
   const { amenities, findAmenity } = useAppState();
@@ -64,7 +65,7 @@ export default function AdminPage() {
           <div className="flex gap-2">
             <button
               onClick={save}
-              className="border-0 bg-accent text-white rounded-lg px-4 py-[10px] text-[13px] font-medium hover:bg-accent-dark"
+              className="border-0 bg-brand text-white rounded-full px-4 py-[10px] text-[13px] font-medium hover:bg-brand-dark"
             >
               Save amenity
             </button>
@@ -75,7 +76,7 @@ export default function AdminPage() {
         </div>
 
         {saved && (
-          <div className="mt-[18px] border border-accent-border bg-accent-bg-2 rounded-lg px-4 py-3 text-[13.5px] text-[#3f5c56] animate-rise">
+          <div className="mt-[18px] border border-accent-border-tint bg-accent-tint rounded-2xl px-4 py-3 text-[13.5px] text-text-primary animate-rise">
             Saved locally. There&apos;s no update endpoint on the backend yet,
             so this doesn&apos;t persist — see backend/README.md.
           </div>
@@ -101,13 +102,13 @@ export default function AdminPage() {
         <div className="flex-1" />
         <button
           onClick={openNew}
-          className="border-0 bg-dark text-white rounded-lg px-4 py-[10px] text-[13px] font-medium hover:bg-accent"
+          className="border-0 bg-brand text-white rounded-full px-4 py-[10px] text-[13px] font-medium hover:bg-brand-dark"
         >
           New amenity
         </button>
       </div>
 
-      <div className="mt-6 bg-surface border border-border rounded-xl overflow-hidden">
+      <div className="mt-6 bg-surface border border-border rounded-2xl overflow-hidden">
         <div className="hidden md:grid grid-cols-[minmax(0,2fr)_minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto] gap-[14px] px-5 py-[11px] bg-[#fafaf8] border-b border-border-hairline text-[11px] tracking-[.07em] font-mono text-text-faint-2">
           <div>AMENITY</div>
           <div>TYPE</div>
@@ -137,18 +138,12 @@ export default function AdminPage() {
               </div>
             </div>
             <div className="flex items-center gap-[10px]">
-              {a.active ? (
-                <span className="text-[10.5px] tracking-[.07em] font-mono text-accent border border-accent-border bg-accent-bg rounded-full px-2 py-[3px]">
-                  ACTIVE
-                </span>
-              ) : (
-                <span className="text-[10.5px] tracking-[.07em] font-mono text-text-faint border border-border-rule bg-[#f6f6f3] rounded-full px-2 py-[3px]">
-                  INACTIVE
-                </span>
-              )}
+              <StatusPill tone={a.active ? "accent" : "neutral"}>
+                {a.active ? "Active" : "Inactive"}
+              </StatusPill>
               <button
                 onClick={() => openEdit(a.id)}
-                className="border border-border bg-surface text-text-secondary-2 rounded-md px-[10px] py-[6px] text-xs hover:border-accent hover:text-accent"
+                className="border border-border bg-surface text-text-secondary rounded-full px-[10px] py-[6px] text-xs hover:border-brand hover:text-brand"
               >
                 Configure
               </button>

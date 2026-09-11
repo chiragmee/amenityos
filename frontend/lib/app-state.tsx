@@ -97,7 +97,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setLoadError(
         err instanceof api.ApiError
           ? err.message
-          : "Could not load AmenityOS. Check that the backend is reachable."
+          : "Could not load nookly. Check that the backend is reachable."
       );
     } finally {
       setLoading(false);

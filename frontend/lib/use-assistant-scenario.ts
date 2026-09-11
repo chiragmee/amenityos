@@ -257,7 +257,7 @@ export function useAssistantScenario() {
             : [],
         resultTitle: lowSent ? "Request sent to workplace admin." : null,
         resultBody: lowSent
-          ? "An admin will review this credit top-up request. You will be notified in AmenityOS. (This is a UI placeholder — there's no backend endpoint for admin notifications yet.)"
+          ? "An admin will review this credit top-up request. You will be notified in nookly. (This is a UI placeholder — there's no backend endpoint for admin notifications yet.)"
           : null,
         blockTitle: isError && !lowSent ? "This booking cannot be completed." : null,
         blockBody:

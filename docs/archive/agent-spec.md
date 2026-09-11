@@ -1,4 +1,4 @@
-# AmenityOS — Agent Spec
+# Nookly — Agent Spec
 
 Describes the reasoning pipeline behind the voice/text booking flow and
 the AI Assistant screen. **Not implemented in this pass** — the frontend

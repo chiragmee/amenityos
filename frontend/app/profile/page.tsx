@@ -11,7 +11,7 @@ export default function ProfilePage() {
       <h1 className="m-0 text-[26px] md:text-[28px] font-semibold tracking-[-0.6px]">
         Profile
       </h1>
-      <div className="mt-[22px] bg-surface border border-border rounded-xl p-6">
+      <div className="mt-[22px] bg-surface border border-border rounded-2xl p-6">
         <div className="flex items-center gap-[14px]">
           <div className="w-[52px] h-[52px] rounded-full bg-avatar-bg text-avatar-text flex items-center justify-center text-[19px] font-semibold">
             {user.avatarInitial}

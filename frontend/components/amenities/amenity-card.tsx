@@ -19,7 +19,7 @@ export function AmenityCard({ amenity }: { amenity: Amenity }) {
   };
 
   return (
-    <div className="bg-surface border border-border rounded-xl overflow-hidden flex flex-col transition-[border-color,transform,box-shadow] hover:border-[#cfd6d2] hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(27,27,25,.05)]">
+    <div className="bg-surface border border-border rounded-2xl overflow-hidden flex flex-col transition-[border-color,transform,box-shadow] hover:border-text-disabled hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(34,38,43,.08)]">
       <div
         className="h-[132px] flex items-end justify-between px-3 py-[10px]"
         style={{
@@ -52,7 +52,7 @@ export function AmenityCard({ amenity }: { amenity: Amenity }) {
         <div className="flex-1" />
         <button
           onClick={handleBook}
-          className="mt-4 border border-border bg-surface text-text rounded-lg px-3 py-[9px] text-[13px] font-medium w-full text-center hover:bg-dark hover:text-white hover:border-dark"
+          className="mt-4 border border-border bg-surface text-text-primary rounded-full px-3 py-[9px] text-[13px] font-medium w-full text-center hover:bg-brand hover:text-white hover:border-brand"
         >
           Book
         </button>

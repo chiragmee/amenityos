@@ -1,90 +1,130 @@
 @import "tailwindcss";
 
+/* Nookly design system v1 — see /nookly_design_system_v1.md at the repo root.
+ * Old token names (from the AmenityOS visual pass) are kept as aliases onto
+ * the new palette below, so existing component classes repaint automatically
+ * without a per-file rewrite. New code should use the plain names:
+ * bg-brand, bg-accent, text-primary/secondary/disabled, border, border-subtle. */
 :root {
-  --color-bg: #f4f4f1;
-  --color-sidebar: #fbfbf9;
+  /* --- new semantic palette --- */
+  --color-bg: #f2f3f1;
   --color-surface: #ffffff;
+  --color-surface-subtle: #f8f8f6;
 
-  --color-border: #e4e4de;
-  --color-border-hairline: #eeeee9;
-  --color-border-hairline-2: #f2f2ed;
-  --color-border-rule: #e7e7e1;
+  --color-text-primary: #22262b;
+  --color-text-secondary: #626970;
+  --color-text-disabled: #9ea4a8;
 
-  --color-text: #1b1b19;
-  --color-text-secondary: #4a4a44;
-  --color-text-secondary-2: #3f3f3a;
-  --color-text-muted: #6f6f68;
-  --color-text-muted-2: #5f5f58;
-  --color-text-faint: #8a8a82;
-  --color-text-faint-2: #9a9a92;
+  --color-border: #d9dcda;
+  --color-border-subtle: #e8eae7;
 
-  --color-accent: #0f5c52;
-  --color-accent-dark: #0b463e;
-  --color-accent-border: #cfe3df;
-  --color-accent-bg: #f2f7f5;
-  --color-accent-bg-2: #f5faf8;
+  --color-brand: #22262b;
+  --color-brand-dark: #14171a;
+  --color-brand-tint: #eceded;
 
-  --color-danger: #9c4a44;
-  --color-danger-dark: #8f3f39;
-  --color-danger-border: #f0dede;
-  --color-danger-bg: #fdf5f4;
-  --color-danger-bg-2: #fdf7f6;
-  --color-danger-body: #6f4f4c;
+  --color-accent: #e8a33d;
+  --color-accent-dark: #c98826;
+  --color-accent-tint: #fbf1df;
+  --color-accent-border-tint: #f0d9ac;
 
-  --color-dark: #1b1b19;
+  --color-danger: #a8503f;
+  --color-danger-dark: #8a4032;
+  --color-danger-tint: #f6e9e6;
+  --color-danger-border-tint: #e8c9c0;
 
-  --color-nav-active-bg: #eceee9;
-  --color-nav-active-text: #14322d;
-  --color-nav-inactive-text: #5f5f58;
-  --color-nav-hover-bg: #f1f1ec;
-  --color-nav-dot-inactive: #d3d3cb;
+  --color-avatar-bg: #e8eae7;
+  --color-avatar-text: #22262b;
 
-  --color-avatar-bg: #e6e9e5;
-  --color-avatar-text: #14322d;
+  --color-spinner-track: #d9dcda;
 
-  --color-todo-ring: #b4b4ac;
-  --color-spinner-track: #d7ded9;
+  /* --- legacy aliases (pre-Nookly names still used across components) --- */
+  --color-sidebar: var(--color-surface-subtle);
+  --color-border-hairline: var(--color-border-subtle);
+  --color-border-hairline-2: #eef0ee;
+  --color-border-rule: var(--color-border-subtle);
+  --color-text: var(--color-text-primary);
+  --color-text-secondary-2: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-secondary);
+  --color-text-muted-2: var(--color-text-secondary);
+  --color-text-faint: var(--color-text-disabled);
+  --color-text-faint-2: var(--color-text-disabled);
+  --color-accent-bg: var(--color-accent-tint);
+  --color-accent-bg-2: var(--color-accent-tint);
+  --color-accent-border: var(--color-accent-border-tint);
+  --color-danger-bg: var(--color-danger-tint);
+  --color-danger-bg-2: var(--color-danger-tint);
+  --color-danger-border: var(--color-danger-border-tint);
+  --color-danger-body: var(--color-danger-dark);
+  --color-dark: var(--color-brand);
+  --color-nav-active-bg: var(--color-brand-tint);
+  --color-nav-active-text: var(--color-text-primary);
+  --color-nav-inactive-text: var(--color-text-secondary);
+  --color-nav-hover-bg: var(--color-surface-subtle);
+  --color-nav-dot-inactive: var(--color-border);
+  --color-todo-ring: var(--color-text-disabled);
 }
 
 @theme inline {
   --color-bg: var(--color-bg);
-  --color-sidebar: var(--color-sidebar);
   --color-surface: var(--color-surface);
-  --color-border: var(--color-border);
-  --color-border-hairline: var(--color-border-hairline);
-  --color-border-hairline-2: var(--color-border-hairline-2);
-  --color-border-rule: var(--color-border-rule);
-  --color-text: var(--color-text);
+  --color-surface-subtle: var(--color-surface-subtle);
+  --color-sidebar: var(--color-sidebar);
+
+  --color-text-primary: var(--color-text-primary);
   --color-text-secondary: var(--color-text-secondary);
+  --color-text-disabled: var(--color-text-disabled);
+  --color-text: var(--color-text);
   --color-text-secondary-2: var(--color-text-secondary-2);
   --color-text-muted: var(--color-text-muted);
   --color-text-muted-2: var(--color-text-muted-2);
   --color-text-faint: var(--color-text-faint);
   --color-text-faint-2: var(--color-text-faint-2);
+
+  --color-border: var(--color-border);
+  --color-border-subtle: var(--color-border-subtle);
+  --color-border-hairline: var(--color-border-hairline);
+  --color-border-hairline-2: var(--color-border-hairline-2);
+  --color-border-rule: var(--color-border-rule);
+
+  --color-brand: var(--color-brand);
+  --color-brand-dark: var(--color-brand-dark);
+  --color-brand-tint: var(--color-brand-tint);
+  --color-dark: var(--color-dark);
+
   --color-accent: var(--color-accent);
   --color-accent-dark: var(--color-accent-dark);
-  --color-accent-border: var(--color-accent-border);
+  --color-accent-tint: var(--color-accent-tint);
+  --color-accent-border-tint: var(--color-accent-border-tint);
   --color-accent-bg: var(--color-accent-bg);
   --color-accent-bg-2: var(--color-accent-bg-2);
+  --color-accent-border: var(--color-accent-border);
+
   --color-danger: var(--color-danger);
   --color-danger-dark: var(--color-danger-dark);
-  --color-danger-border: var(--color-danger-border);
+  --color-danger-tint: var(--color-danger-tint);
+  --color-danger-border-tint: var(--color-danger-border-tint);
   --color-danger-bg: var(--color-danger-bg);
   --color-danger-bg-2: var(--color-danger-bg-2);
+  --color-danger-border: var(--color-danger-border);
   --color-danger-body: var(--color-danger-body);
-  --color-dark: var(--color-dark);
+
+  --color-avatar-bg: var(--color-avatar-bg);
+  --color-avatar-text: var(--color-avatar-text);
+
   --color-nav-active-bg: var(--color-nav-active-bg);
   --color-nav-active-text: var(--color-nav-active-text);
   --color-nav-inactive-text: var(--color-nav-inactive-text);
   --color-nav-hover-bg: var(--color-nav-hover-bg);
   --color-nav-dot-inactive: var(--color-nav-dot-inactive);
-  --color-avatar-bg: var(--color-avatar-bg);
-  --color-avatar-text: var(--color-avatar-text);
+
   --color-todo-ring: var(--color-todo-ring);
   --color-spinner-track: var(--color-spinner-track);
 
-  --font-sans: var(--font-instrument-sans), -apple-system, "Helvetica Neue", sans-serif;
-  --font-mono: var(--font-ibm-plex-mono), monospace;
+  --font-sans: var(--font-inter), -apple-system, "Segoe UI", sans-serif;
+  --font-wordmark: var(--font-comfortaa), "Arial Rounded MT Bold", sans-serif;
+  /* Nookly has no monospace anywhere — any leftover `font-mono` usage
+   * should still render in the product typeface, not a stray monospace. */
+  --font-mono: var(--font-inter), -apple-system, "Segoe UI", sans-serif;
 }
 
 * {
@@ -94,21 +134,21 @@
 body {
   margin: 0;
   background: var(--color-bg);
-  color: var(--color-text);
+  color: var(--color-text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
 a {
-  color: var(--color-accent);
+  color: var(--color-text-primary);
   text-decoration: none;
 }
 a:hover {
-  color: var(--color-accent-dark);
+  color: var(--color-brand-dark);
 }
 
 ::selection {
-  background: var(--color-accent-border);
+  background: var(--color-accent-border-tint);
 }
 
 ::-webkit-scrollbar {
@@ -116,19 +156,11 @@ a:hover {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #dcdcd6;
+  background: var(--color-border);
   border-radius: 8px;
   border: 3px solid var(--color-bg);
 }
 
-@keyframes wf {
-  0%, 100% { transform: scaleY(0.25); }
-  50% { transform: scaleY(1); }
-}
-@keyframes pulseRing {
-  0% { transform: scale(1); opacity: .5; }
-  100% { transform: scale(1.45); opacity: 0; }
-}
 @keyframes rise {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
@@ -137,13 +169,16 @@ a:hover {
   to { transform: rotate(360deg); }
 }
 @keyframes pop {
-  0% { transform: scale(.85); opacity: 0; }
-  60% { transform: scale(1.04); }
+  0% { transform: scale(.92); opacity: 0; }
+  60% { transform: scale(1.02); }
   100% { transform: scale(1); opacity: 1; }
 }
+@keyframes wf {
+  0%, 100% { transform: scaleY(0.25); }
+  50% { transform: scaleY(1); }
+}
 
-.animate-wf { animation: wf ease-in-out infinite; }
-.animate-pulse-ring { animation: pulseRing 2.6s ease-out infinite; }
-.animate-rise { animation: rise .28s ease both; }
+.animate-rise { animation: rise .26s ease both; }
 .animate-spin-slow { animation: spin .7s linear infinite; }
-.animate-pop { animation: pop .3s ease both; }
+.animate-pop { animation: pop .28s ease both; }
+.animate-wf { animation: wf ease-in-out infinite; }

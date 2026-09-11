@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320">
+<rect width="100%" height="100%" fill="#22262B"/>
+<defs>
+<style>
+.word { font-family: Comfortaa, 'Arial Rounded MT Bold', sans-serif; font-weight: 600; }
+.tag { font-family: Inter, Arial, sans-serif; font-weight: 400; letter-spacing: 2px; }
+</style>
+</defs><g transform="translate(30,20)">
+<path d="M58 238V112C58 75 82 52 118 52H186C222 52 246 75 246 112V238"
+ fill="none" stroke="#F2F3F1" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M112 238V124C112 106 123 95 141 95H165C183 95 194 106 194 124V238"
+ fill="none" stroke="#F2F3F1" stroke-width="22" stroke-linecap="round"/>
+<path d="M154 122V207" stroke="#E8A33D" stroke-width="30" stroke-linecap="round"/>
+</g></svg>

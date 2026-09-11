@@ -4,6 +4,10 @@ One line per change: what + why + files touched. Newest entries at the top.
 
 ---
 
+**2026-09-11** — Rebranded AmenityOS to Nookly per `nookly_design_system_v1.md` and the door-nook logo set: new graphite/stone/amber palette (old CSS tokens aliased onto it so components didn't need individual rewrites), Inter for UI text + Comfortaa for the wordmark, real logo (favicon, sidebar, mobile header). Redesigned Home's voice control — dropped the giant circular mic button for a calm text-input-first control per the spec's explicit "no microphone-first branding" rule. Converted all-caps status badges (Confirmed/Active/Inactive/Cancelled/Expired) to sentence case + a small colored dot, and fixed several primary buttons that had been amber-filled (should be graphite; amber is reserved for small emphasis only, e.g. the active nav dot or a confirmation checkmark). Case-sensitive renamed "AmenityOS" → "Nookly" across all docs and UI copy, careful not to touch real infra identifiers that still say "amenityos" (repo name, DB file, deployed URLs).
+Why: user explicitly requested a rebrand under the new product name with a provided design system and logo assets.
+Files: `frontend/app/{globals.css,layout.tsx,page.tsx,icon.svg,apple-icon.png}`, `frontend/public/brand/`, most of `frontend/components/*` and `frontend/app/*`, `README.md`, `AGENTS.md`, `docs/*.md`, `backend/README.md`, `backend/app/main.py`, `nookly_design_system_v1.md` + `nookly_final_logo_assets.zip` (added)
+
 **2026-09-11** — Wired the frontend to the live backend, deleting mock-data.ts. Every page now reads real data; Home's voice flow and Assistant page actions create real bookings. Found and fixed a real bug during verification: the backend treats timestamps as naive wall-clock (no UTC math) but the frontend was sending true-UTC-converted times via `.toISOString()`, which would silently book the wrong hour for any non-UTC browser. Added `lib/backend-time.ts` to cross that boundary consistently; verified with a real booking + access-token-verify + capacity-exceeded-error round trip against the deployed backend.
 Why: mock data was never going to prove the system works — needed the whole path (browser → Vercel → Render → Supabase) exercised for real.
 Files: `frontend/lib/{api-client,backend-types,backend-time,format,map-backend}.ts` (new), `frontend/lib/{app-state,types,use-voice-flow,use-assistant-scenario}.ts`, most of `frontend/app/*` and several `frontend/components/*`, `frontend/lib/mock-data.ts` (deleted)
@@ -32,7 +36,7 @@ Files: `PROGRESS.md`
 Why: the doc-derived README was too abstract for an outside visitor to know what the repo contains.
 Files: `README.md`
 
-**2026-09-09** — Replaced the six early draft specs with the full AmenityOS agent documentation set (`AGENTS.md` + `docs/00`–`18`); moved drafts to `docs/archive/`.
+**2026-09-09** — Replaced the six early draft specs with the full Nookly agent documentation set (`AGENTS.md` + `docs/00`–`18`); moved drafts to `docs/archive/`.
 Why: the new set (from the Claude Design agent-docs export) is a complete, authoritative rewrite of the same ground the drafts covered.
 Files: `AGENTS.md`, `docs/00-documentation-index.md`..`docs/18-roadmap.md`, `docs/archive/*`
 

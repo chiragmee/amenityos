@@ -1,11 +1,11 @@
-# AmenityOS — Product Spec
+# Nookly — Product Spec
 
 Source of truth for this spec: the Claude Design handoff `AmenityOS.dc.html`
 (extracted to `handoff-extracted/`). This document describes the product as
 that prototype defines it — screens, flows, and states — independent of
 implementation technology.
 
-## What AmenityOS is
+## What Nookly is
 
 A workplace amenity-booking product for a single tenant/org ("Google",
 "Tower A" in the mock data). Employees book meeting rooms, gym slots,

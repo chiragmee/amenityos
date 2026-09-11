@@ -33,7 +33,7 @@ export default function AssistantPage() {
         ))}
       </div>
 
-      <div className="mt-5 bg-surface border border-border rounded-[14px] p-5 md:p-7 shadow-[0_1px_2px_rgba(27,27,25,.04)]">
+      <div className="mt-5 bg-surface border border-border rounded-[24px] p-5 md:p-7 shadow-[0_2px_8px_rgba(34,38,43,0.06)]">
         <div className="flex justify-end">
           <div className="max-w-[85%] sm:max-w-[70%] bg-dark text-white rounded-[12px_12px_3px_12px] px-4 py-[13px] text-[14.5px] leading-[1.45]">
             {turn.user}
@@ -41,7 +41,7 @@ export default function AssistantPage() {
         </div>
 
         <div className="mt-[18px] flex gap-3 animate-rise">
-          <div className="w-[26px] h-[26px] shrink-0 rounded-[7px] bg-accent text-white flex items-center justify-center text-[11px] font-semibold">
+          <div className="w-[26px] h-[26px] shrink-0 rounded-[10px] bg-brand text-white flex items-center justify-center text-[11px] font-semibold">
             A
           </div>
           <div className="min-w-0 flex-1">
@@ -60,7 +60,7 @@ export default function AssistantPage() {
                     <button
                       key={i}
                       onClick={a.run}
-                      className="border-0 bg-accent text-white rounded-lg px-4 py-[10px] text-[13px] font-medium hover:bg-accent-dark"
+                      className="border-0 bg-brand text-white rounded-full px-4 py-[10px] text-[13px] font-medium hover:bg-brand-dark"
                     >
                       {a.label}
                     </button>

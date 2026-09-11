@@ -1,6 +1,6 @@
-# AGENTS.md — AmenityOS Engineering Contract
+# AGENTS.md — Nookly Engineering Contract
 
-This repository contains AmenityOS, an action-taking workplace amenity booking agent.
+This repository contains Nookly, an action-taking workplace amenity booking agent.
 
 This file is intended for Claude Code and other coding agents.
 

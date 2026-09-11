@@ -1,4 +1,4 @@
-# AmenityOS — Frontend Spec
+# Nookly — Frontend Spec
 
 Reproduces `AmenityOS.dc.html` in Next.js (App Router) + TypeScript +
 Tailwind, against mock data. No auth. No state library — local React state
@@ -54,7 +54,7 @@ not the prototype's `<link>` tags.
 ## App shell
 
 - **Sidebar** (desktop, ≥ md breakpoint): logo mark ("A" on green square +
-  "AmenityOS" wordmark), nav list, spacer, user footer (avatar initial,
+  "Nookly" wordmark), nav list, spacer, user footer (avatar initial,
   name, workspace, "Profile" button). Nav items: Home, AI Assistant,
   Amenities, My Bookings, — divider —, Credits, — divider —, Admin. Active
   item: light-grey pill bg + green dot + dark text. Inactive: transparent,

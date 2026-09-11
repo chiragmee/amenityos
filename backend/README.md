@@ -1,4 +1,4 @@
-# AmenityOS Backend
+# Nookly Backend
 
 The deterministic booking engine. No LLM, no RAG, no voice — those are
 specified in `../docs/` but deliberately not wired in yet. This proves the

@@ -12,7 +12,7 @@ function LoadState() {
   if (loading) {
     return (
       <div className="py-24 text-center text-sm text-text-faint">
-        Loading AmenityOS…
+        Loading nookly…
         <div className="mt-2 text-[12.5px] text-text-faint-2">
           The backend runs on a free tier and can take up to a minute to
           wake up from idle.

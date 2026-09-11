@@ -1,6 +1,6 @@
-# AmenityOS — Backend Spec
+# Nookly — Backend Spec
 
-Describes the backend AmenityOS will eventually need to serve the frontend
+Describes the backend Nookly will eventually need to serve the frontend
 built against `frontend-spec.md`. **Not implemented in this pass** — this
 document exists so the frontend's mock data layer is designed against a
 real target instead of drifting.

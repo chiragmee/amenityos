@@ -5,6 +5,7 @@ import Link from "next/link";
 import * as api from "@/lib/api-client";
 import { useAppState } from "@/lib/app-state";
 import { placeholderQrDataUri } from "@/lib/qr";
+import { StatusPill } from "@/components/ui/status-pill";
 
 export function PassView({ bookingId }: { bookingId?: string }) {
   const { upcomingBookings, pastBookings } = useAppState();
@@ -58,34 +59,30 @@ export function PassView({ bookingId }: { bookingId?: string }) {
         Access pass
       </h1>
 
-      <div className="mt-5 bg-surface border border-border rounded-2xl p-8 text-center shadow-[0_1px_3px_rgba(27,27,25,.05)]">
+      <div className="mt-5 bg-surface border border-border rounded-[24px] p-8 text-center shadow-[0_2px_8px_rgba(34,38,43,0.06)]">
         {isActive ? (
           <>
-            <div className="inline-flex items-center gap-2 border border-accent-border bg-accent-bg text-accent rounded-full px-3 py-[5px] text-[11px] tracking-[.09em] font-mono">
-              <span className="w-[6px] h-[6px] rounded-full bg-accent" />
-              ACTIVE
-            </div>
+            <StatusPill tone="accent">Active</StatusPill>
             <img
               src={placeholderQrDataUri()}
               alt="Access QR code"
-              className="block mx-auto mt-[26px] w-[232px] h-[232px] border border-border-rule rounded-[10px] animate-pop"
+              className="block mx-auto mt-[26px] w-[232px] h-[232px] border border-border rounded-2xl animate-pop"
             />
-            <div className="mt-[18px] text-[13px] text-text-faint font-mono">
+            <div className="mt-[18px] text-[13px] text-text-disabled">
               {booking.displayId}
             </div>
           </>
         ) : (
           <>
-            <div className="inline-flex items-center gap-2 border border-border-rule bg-[#f6f6f3] text-text-faint rounded-full px-3 py-[5px] text-[11px] tracking-[.09em] font-mono">
-              <span className="w-[6px] h-[6px] rounded-full bg-[#b4b4ac]" />
-              {booking.status === "cancelled" ? "CANCELLED" : "EXPIRED"}
-            </div>
+            <StatusPill tone="neutral">
+              {booking.status === "cancelled" ? "Cancelled" : "Expired"}
+            </StatusPill>
             <img
               src={placeholderQrDataUri()}
               alt="Expired QR code"
-              className="block mx-auto mt-[26px] w-[232px] h-[232px] border border-border-hairline rounded-[10px] grayscale opacity-[.24]"
+              className="block mx-auto mt-[26px] w-[232px] h-[232px] border border-border-subtle rounded-2xl grayscale opacity-[.24]"
             />
-            <div className="mt-[18px] text-[13.5px] text-text-faint">
+            <div className="mt-[18px] text-[13.5px] text-text-disabled">
               This access pass is no longer valid.
             </div>
           </>

@@ -2,7 +2,7 @@
 
 ## Goal
 
-Run the entire AmenityOS MVP locally.
+Run the entire Nookly MVP locally.
 
 ## Components
 

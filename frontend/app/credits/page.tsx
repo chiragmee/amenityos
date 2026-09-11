@@ -17,7 +17,7 @@ export default function CreditsPage() {
       </p>
 
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-[14px]">
-        <div className="bg-surface border border-border rounded-xl p-[22px]">
+        <div className="bg-surface border border-border rounded-2xl p-[22px]">
           <div className="text-[11px] tracking-[.07em] font-mono text-text-faint-2">
             REMAINING
           </div>
@@ -31,7 +31,7 @@ export default function CreditsPage() {
             />
           </div>
         </div>
-        <div className="bg-surface border border-border rounded-xl p-[22px]">
+        <div className="bg-surface border border-border rounded-2xl p-[22px]">
           <div className="text-[11px] tracking-[.07em] font-mono text-text-faint-2">
             GRANTED THIS MONTH
           </div>
@@ -42,7 +42,7 @@ export default function CreditsPage() {
             Granted by {user?.org ?? "your"} workplace plan
           </div>
         </div>
-        <div className="bg-surface border border-border rounded-xl p-[22px]">
+        <div className="bg-surface border border-border rounded-2xl p-[22px]">
           <div className="text-[11px] tracking-[.07em] font-mono text-text-faint-2">
             SPENT THIS MONTH
           </div>
@@ -56,7 +56,7 @@ export default function CreditsPage() {
       </div>
 
       <h2 className="mt-9 text-[17px] font-semibold tracking-[-0.3px]">Activity</h2>
-      <div className="mt-[14px] bg-surface border border-border rounded-xl overflow-hidden">
+      <div className="mt-[14px] bg-surface border border-border rounded-2xl overflow-hidden">
         {ledger.length === 0 && (
           <div className="px-5 py-6 text-sm text-text-faint">No activity yet.</div>
         )}

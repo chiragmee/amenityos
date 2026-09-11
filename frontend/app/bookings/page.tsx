@@ -11,6 +11,10 @@ function toneFor(status: BookingStatus) {
   return "neutral" as const;
 }
 
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 function Row({ booking }: { booking: Booking }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_minmax(0,1fr)_auto] gap-2 sm:gap-[14px] px-5 sm:px-5 py-4 border-b border-border-hairline-2 last:border-b-0 items-center hover:bg-[#fcfcfa]">
@@ -24,11 +28,11 @@ function Row({ booking }: { booking: Booking }) {
       <div className="text-[13.5px] text-text-secondary">{booking.meta}</div>
       <div className="flex items-center gap-[10px]">
         <StatusPill tone={toneFor(booking.status)}>
-          {booking.status.toUpperCase()}
+          {capitalize(booking.status)}
         </StatusPill>
         <Link
           href={`/pass/${booking.id}`}
-          className="border border-border bg-surface text-text-secondary-2 rounded-md px-[10px] py-[6px] text-xs hover:border-[#c9c9c1]"
+          className="border border-border bg-surface text-text-secondary rounded-full px-[10px] py-[6px] text-xs hover:border-text-disabled"
         >
           Pass
         </Link>
@@ -49,7 +53,7 @@ export default function BookingsPage() {
       <p className="mt-2 text-[15px] text-text-muted">
         {upcomingBookings.length} upcoming · {pastBookings.length} past
       </p>
-      <div className="mt-6 bg-surface border border-border rounded-xl overflow-hidden">
+      <div className="mt-6 bg-surface border border-border rounded-2xl overflow-hidden">
         <div className="hidden sm:grid grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_minmax(0,1fr)_auto] gap-[14px] px-5 py-[11px] bg-[#fafaf8] border-b border-border-hairline text-[11px] tracking-[.07em] font-mono text-text-faint-2">
           <div>AMENITY</div>
           <div>WHEN</div>

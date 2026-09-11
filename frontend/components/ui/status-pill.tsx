@@ -1,9 +1,11 @@
 const tones = {
-  accent: "text-accent border-accent-border bg-accent-bg",
-  danger: "text-danger-dark border-danger-border bg-danger-bg-2",
-  neutral: "text-text-faint border-border-rule bg-[#f6f6f3]",
+  accent: { dot: "bg-accent", text: "text-text-primary" },
+  danger: { dot: "bg-danger", text: "text-danger-dark" },
+  neutral: { dot: "bg-text-disabled", text: "text-text-secondary" },
 } as const;
 
+/** Sentence-case label + a small colored dot — never color alone as the
+ * status signal, per the design system's accessibility rule. */
 export function StatusPill({
   children,
   tone = "accent",
@@ -11,10 +13,10 @@ export function StatusPill({
   children: React.ReactNode;
   tone?: keyof typeof tones;
 }) {
+  const t = tones[tone];
   return (
-    <span
-      className={`text-[10.5px] tracking-[.07em] font-mono border rounded-full px-2 py-[3px] whitespace-nowrap ${tones[tone]}`}
-    >
+    <span className={`inline-flex items-center gap-[6px] text-[12.5px] font-medium whitespace-nowrap ${t.text}`}>
+      <span className={`w-[6px] h-[6px] rounded-full ${t.dot}`} />
       {children}
     </span>
   );

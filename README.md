@@ -1,8 +1,8 @@
-# AmenityOS
+# Nookly
 
-## AI-Powered Workplace Amenity Booking Agent
+## Your workplace, booked.
 
-AmenityOS is an action-taking AI agent for workplace and commercial-real-estate amenity booking.
+Nookly is an action-taking AI agent for workplace and commercial-real-estate amenity booking. Visual identity, logo, and UI language follow `nookly_design_system_v1.md` (brand assets in `nookly_final_logo_assets.zip`) — warm, spatial, and calm rather than clinical or "AI-looking."
 
 Instead of navigating a multi-step booking application, an employee can say or type:
 
@@ -19,7 +19,7 @@ The problem is not that employees cannot book amenities. The problem is that the
 
 open app → find building/floor → search amenity → pick date → pick time → pick duration → enter attendees → check eligibility → check price → confirm → retrieve access pass.
 
-AmenityOS changes the interaction model from:
+Nookly changes the interaction model from:
 
 **Navigate → search → select → fill → validate → confirm → book**
 
@@ -59,7 +59,7 @@ No auth, no multi-agent framework, no LangChain — deliberately, see `AGENTS.md
 
 ## Core architectural principle
 
-AmenityOS deliberately separates three kinds of truth:
+Nookly deliberately separates three kinds of truth:
 
 | Truth | Source |
 |---|---|

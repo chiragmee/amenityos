@@ -1,4 +1,4 @@
-# AmenityOS — Data Model
+# Nookly — Data Model
 
 Entities implied by the design handoff, shaped for SQLite (relational core)
 + Qdrant (semantic amenity search) below. TypeScript mirrors for the

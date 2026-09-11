@@ -13,11 +13,13 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex w-[252px] shrink-0 flex-col gap-0 bg-sidebar border-r border-border px-4 py-[22px] sticky top-0 h-screen">
       <div className="flex items-center gap-[10px] px-2 pb-[22px]">
-        <div className="w-6 h-6 rounded-[6px] bg-accent flex items-center justify-center text-white text-xs font-semibold">
-          A
-        </div>
-        <div className="text-[15px] font-semibold tracking-[-0.2px]">
-          AmenityOS
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/nookly-mark.svg" alt="" className="w-7 h-7" />
+        <div
+          className="text-[19px] font-semibold tracking-[-0.4px] text-text-primary"
+          style={{ fontFamily: "var(--font-wordmark)" }}
+        >
+          nookly
         </div>
       </div>
 
@@ -31,8 +33,8 @@ export function Sidebar() {
               href={item.href}
               className={
                 active === item.href
-                  ? "flex items-center gap-[10px] w-full text-left px-[10px] py-[9px] rounded-[7px] bg-nav-active-bg text-nav-active-text text-[13.5px] font-medium"
-                  : "flex items-center gap-[10px] w-full text-left px-[10px] py-[9px] rounded-[7px] bg-transparent text-nav-inactive-text text-[13.5px] font-normal transition-colors hover:bg-nav-hover-bg hover:text-text"
+                  ? "flex items-center gap-[10px] w-full text-left px-[10px] py-[9px] rounded-[10px] bg-nav-active-bg text-nav-active-text text-[13.5px] font-medium"
+                  : "flex items-center gap-[10px] w-full text-left px-[10px] py-[9px] rounded-[10px] bg-transparent text-nav-inactive-text text-[13.5px] font-normal transition-colors hover:bg-nav-hover-bg hover:text-text"
               }
             >
               <span

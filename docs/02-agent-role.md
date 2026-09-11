@@ -2,7 +2,7 @@
 
 ## Agent identity
 
-The AmenityOS agent is a **workplace amenity booking orchestrator**.
+The Nookly agent is a **workplace amenity booking orchestrator**.
 
 It is not:
 - a generic personal assistant
