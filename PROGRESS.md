@@ -4,6 +4,10 @@ One line per change: what + why + files touched. Newest entries at the top.
 
 ---
 
+**2026-09-11** — Wrote the Phase A agent implementation plan (no code yet — user asked to review the plan first). Covers: tool wrappers over the existing booking_engine.py (no new business logic, translation layer only), the orchestrator loop, POST /agent/chat, giving the already-built-but-unused AgentSession/AgentMessage tables a real purpose, and rewiring Home + Assistant to call it. Flagged three open decisions (Assistant page UI approach, clarifying-question UI slot, Gemini API key provisioning) for the user before starting.
+Why: user asked "when and how" for the full voice agent integration; docs/02-08 already spec the architecture in detail, so this translates that into a concrete, sequenced build plan rather than re-deriving the design from scratch.
+Files: `docs/19-agent-phase-a-implementation-plan.md` (new), `README.md`
+
 **2026-09-11** — Fixed a real gap: there was no working manual booking flow. Amenities page's "Book" button redirected to Home and prefilled text, but Home's flow always creates the same hardcoded Emerald-at-3pm booking regardless — clicking "Book" on the Gym or any other amenity silently booked Emerald instead. Added a real `/amenities/[amenityId]` booking page: pick date/time/duration/attendees, live-validated against the real backend (debounced `POST /bookings/validate` as you type, showing real cost/availability/errors), submit via the existing `createRealBooking`. Removed the broken prefill mechanism entirely (`pendingPrefill` in app-state.tsx) now that nothing produces it correctly. Voice/text on Home stays as a convenience layer on top of this, not the only way to book.
 Why: user caught that the core "browse and book manually" path — the actual product, with voice as a convenience on top — was never built; only the voice demo and its fixed scenario existed.
 Files: `frontend/app/amenities/[amenityId]/page.tsx` (new), `frontend/components/amenities/{book-amenity-view,amenity-card}.tsx`, `frontend/lib/{types,map-backend,app-state}.tsx`, `frontend/app/page.tsx`, `README.md`

@@ -187,6 +187,7 @@ for what's deliberately simplified and where it diverges from
 - `docs/16-developer-runbook.md` — local development and demo workflow
 - `docs/17-failure-modes.md` — expected failures and recovery behavior
 - `docs/18-roadmap.md` — post-MVP evolution
+- `docs/19-agent-phase-a-implementation-plan.md` — concrete plan for the tool-calling agent (next milestone, not yet built)
 
 ## Status
 
