@@ -10,7 +10,8 @@ Instead of navigating a multi-step booking application, an employee can say or t
 
 The agent interprets the request, identifies the amenity, checks relevant rules, checks live availability, validates eligibility and capacity, handles credits for paid amenities, creates the booking when authorized, generates an access credential/QR code, and reports the actual result.
 
-**Live frontend prototype:** https://frontend-five-dusky-47.vercel.app
+**Live app:** https://frontend-five-dusky-47.vercel.app (frontend, wired to the real backend below)
+**Live API:** https://amenityos-backend.onrender.com/docs (free-tier — can take up to a minute to wake up from idle)
 
 ## Product thesis
 
@@ -28,7 +29,7 @@ to:
 
 ## Product landscape
 
-The frontend (built, deployed, running on mock data) implements eight screens, desktop and mobile:
+The frontend (built, deployed, wired to the real backend) implements eight screens, desktop and mobile:
 
 | Screen | What it does |
 |---|---|
@@ -41,15 +42,15 @@ The frontend (built, deployed, running on mock data) implements eight screens, d
 | **Access Pass** | QR credential for an amenity booking, with an active/expired state and countdown |
 | **Profile** | Identity, credit summary, eligibility, and voice preference |
 
-The frontend still runs against typed mock data — it isn't wired to the backend yet. The backend's deterministic booking engine (below) is built and tested; connecting the frontend to it, and then layering the agent/voice/RAG stack on top, are the next phases.
+Every screen above reads real data from the deployed backend — real amenities, real bookings, real credit balances. The Home page's voice/text flow and the Assistant page's confirm/pick actions create real bookings through the real validation pipeline (real conflicts, real capacity checks, real credit deduction). What's still simulated: there's no NLU yet, so the "understanding your request" step is a scripted animation, not a real parse — see `docs/03-system-prompt.md` / `docs/05-tool-contracts.md` for what a connected LLM would replace it with.
 
 ## Tech stack
 
 | Layer | Choice | Status |
 |---|---|---|
-| Frontend | Next.js (App Router), TypeScript, Tailwind CSS | Built, deployed to Vercel (mock data, not yet wired to the backend) |
-| Backend | Python, FastAPI, SQLModel | Built — deterministic booking engine, 14 passing tests, not yet exposed to the frontend or an agent |
-| Database | SQLite | Built |
+| Frontend | Next.js (App Router), TypeScript, Tailwind CSS | Built, deployed to Vercel, wired to the real backend |
+| Backend | Python, FastAPI, SQLModel | Built and deployed (Render free tier) — deterministic booking engine, 14 passing tests |
+| Database | Postgres (Supabase) | Deployed |
 | Vector store | Qdrant (amenity policy/guideline retrieval) | Specified, not yet implemented |
 | LLM | Gemini API | Specified, not yet implemented |
 | Voice | Local speech-to-text (faster-whisper) + browser text-to-speech | Specified, not yet implemented |
@@ -93,13 +94,16 @@ amenityos/
   PROGRESS.md                one-line-per-change log of what's been built and why
   docs/                       full specification (see Documentation map below)
     archive/                  superseded early drafts, kept for reference only
-  frontend/                  Next.js app (built, deployed, mock data)
-  backend/                   FastAPI + SQLModel deterministic booking engine (built, tested)
+  frontend/                  Next.js app (built, deployed, wired to the real backend)
+  backend/                   FastAPI + SQLModel deterministic booking engine (built, tested, deployed)
   AmenityOS prototype shell-handoff.zip   original Claude Design handoff
   handoff-extracted/         unpacked copy of the design handoff, for reference
 ```
 
 ## Running it
+
+Both pieces are already deployed and wired together — visiting the live app
+link above talks to the live API. To run locally instead:
 
 **Frontend:**
 
@@ -109,7 +113,9 @@ npm install
 npm run dev
 ```
 
-Then open `http://localhost:3000`.
+Then open `http://localhost:3000`. By default it points at the deployed
+backend (`frontend/.env.local`'s `NEXT_PUBLIC_API_URL`) — point it at
+`http://localhost:8000` instead if you're also running the backend locally.
 
 **Backend:**
 
@@ -121,9 +127,12 @@ python -m app.seed        # demo users, amenities, bookings
 uvicorn app.main:app --reload
 ```
 
-API docs at `http://localhost:8000/docs`. Run `python -m pytest -v` for the
-14-test suite. See `backend/README.md` for what's deliberately simplified
-and where it diverges from `docs/14-api-contracts.md`.
+Set `DATABASE_URL` to a Postgres connection string to match production, or
+leave it unset for a local SQLite file. API docs at
+`http://localhost:8000/docs`. Run `python -m pytest -v` for the 14-test
+suite (always uses an isolated in-memory database). See `backend/README.md`
+for what's deliberately simplified and where it diverges from
+`docs/14-api-contracts.md`.
 
 **Agent, voice, RAG:** not yet implemented. `docs/16-developer-runbook.md` specifies the intended local setup (Qdrant, Gemini key, ingest scripts) for when that work lands — treat it as a target, not a current instruction.
 
@@ -181,7 +190,7 @@ and where it diverges from `docs/14-api-contracts.md`.
 
 ## Status
 
-The frontend (all 8 screens above) is built and independently deployed against mock data. The backend's deterministic booking engine is built and tested (validation pipeline, atomic paid bookings, idempotency) but not yet wired to the frontend or to an LLM. Agent orchestration, RAG, and voice are fully specified in `docs/` but not yet implemented — that implementation should follow the contracts in this documentation rather than inventing new behavior.
+The frontend (all 8 screens above) and the backend's deterministic booking engine (validation pipeline, atomic paid bookings, idempotency) are both built, deployed, and wired together — the live app creates real bookings against a real Postgres database. Agent orchestration, RAG, and voice are fully specified in `docs/` but not yet implemented — that implementation should follow the contracts in this documentation rather than inventing new behavior.
 
 ## Design rule
 

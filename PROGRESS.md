@@ -4,6 +4,18 @@ One line per change: what + why + files touched. Newest entries at the top.
 
 ---
 
+**2026-09-11** — Wired the frontend to the live backend, deleting mock-data.ts. Every page now reads real data; Home's voice flow and Assistant page actions create real bookings. Found and fixed a real bug during verification: the backend treats timestamps as naive wall-clock (no UTC math) but the frontend was sending true-UTC-converted times via `.toISOString()`, which would silently book the wrong hour for any non-UTC browser. Added `lib/backend-time.ts` to cross that boundary consistently; verified with a real booking + access-token-verify + capacity-exceeded-error round trip against the deployed backend.
+Why: mock data was never going to prove the system works — needed the whole path (browser → Vercel → Render → Supabase) exercised for real.
+Files: `frontend/lib/{api-client,backend-types,backend-time,format,map-backend}.ts` (new), `frontend/lib/{app-state,types,use-voice-flow,use-assistant-scenario}.ts`, most of `frontend/app/*` and several `frontend/components/*`, `frontend/lib/mock-data.ts` (deleted)
+
+**2026-09-11** — Deployed the backend for real: Supabase Postgres (project `amenityos`, `us-east-1`) as the database, Render free-tier web service (`amenityos-backend.onrender.com`) running the FastAPI app, connected via the Supavisor connection pooler (the direct host is IPv6-only, which Render's free tier can't reach). Added `psycopg[binary]` as the Postgres driver.
+Why: prove the backend runs somewhere other than localhost before wiring the frontend to it.
+Files: `backend/requirements.txt`, `.gitignore` (Supabase CLI cache)
+
+**2026-09-11** — Built the backend: FastAPI + SQLModel deterministic booking engine, 10 entities, 12 routes, seed data (3 users, 7 amenities), 14 passing tests. Updated `docs/14-api-contracts.md` and added `backend/README.md` to document where the build diverged from the original contract doc (no `/api` prefix, `POST /access/verify` instead of `GET .../verify/{token}`, two added endpoints). Updated root README's stack table, repo structure, and status to reflect it. No LLM/RAG/voice connected yet, per instruction — this proves the deterministic engine alone.
+Why: prove the booking engine is correct before adding any agent/LLM layer on top of it.
+Files: `backend/` (all), `docs/14-api-contracts.md`, `README.md`
+
 **2026-09-11** — Built the backend: FastAPI + SQLModel deterministic booking engine, 10 entities, 12 routes, seed data (3 users, 7 amenities), 14 passing tests. Updated `docs/14-api-contracts.md` and added `backend/README.md` to document where the build diverged from the original contract doc (no `/api` prefix, `POST /access/verify` instead of `GET .../verify/{token}`, two added endpoints). Updated root README's stack table, repo structure, and status to reflect it. No LLM/RAG/voice connected yet, per instruction — this proves the deterministic engine alone.
 Why: prove the booking engine is correct before adding any agent/LLM layer on top of it.
 Files: `backend/` (all), `docs/14-api-contracts.md`, `README.md`
