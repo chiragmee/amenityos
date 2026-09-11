@@ -27,7 +27,7 @@ function Row({ booking }: { booking: Booking }) {
           {booking.status.toUpperCase()}
         </StatusPill>
         <Link
-          href="/pass"
+          href={`/pass/${booking.id}`}
           className="border border-border bg-surface text-text-secondary-2 rounded-md px-[10px] py-[6px] text-xs hover:border-[#c9c9c1]"
         >
           Pass

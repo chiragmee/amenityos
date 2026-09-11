@@ -1,7 +1,6 @@
 "use client";
 
-import { scenarioLabels } from "@/lib/mock-data";
-import { useAssistantScenario } from "@/lib/use-assistant-scenario";
+import { scenarioLabels, useAssistantScenario } from "@/lib/use-assistant-scenario";
 import { OptionsList } from "@/components/assistant/options-list";
 import { ResultPanel, BlockPanel } from "@/components/assistant/result-panels";
 

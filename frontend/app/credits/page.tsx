@@ -1,12 +1,11 @@
 "use client";
 
 import { useAppState } from "@/lib/app-state";
-import { currentUser } from "@/lib/mock-data";
 
 export default function CreditsPage() {
-  const { credits, ledger } = useAppState();
-  const pct = Math.round((credits / currentUser.monthlyAllowance) * 100);
-  const spent = currentUser.monthlyAllowance - credits;
+  const { user, credits, monthlyAllowance, spentThisMonth, ledger } = useAppState();
+  const total = credits + spentThisMonth;
+  const pct = total > 0 ? Math.round((credits / total) * 100) : 100;
 
   return (
     <section className="animate-rise">
@@ -14,7 +13,7 @@ export default function CreditsPage() {
         Credits
       </h1>
       <p className="mt-2 text-[15px] text-text-muted">
-        Monthly allowance resets on the 1st.
+        Balance and activity from your real credit ledger.
       </p>
 
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-[14px]">
@@ -34,13 +33,13 @@ export default function CreditsPage() {
         </div>
         <div className="bg-surface border border-border rounded-xl p-[22px]">
           <div className="text-[11px] tracking-[.07em] font-mono text-text-faint-2">
-            MONTHLY ALLOWANCE
+            GRANTED THIS MONTH
           </div>
           <div className="mt-[10px] text-[38px] font-semibold tracking-[-1.2px]">
-            {currentUser.monthlyAllowance}
+            {monthlyAllowance}
           </div>
           <div className="mt-3 text-[12.5px] text-text-faint">
-            Granted by {currentUser.org} workplace plan
+            Granted by {user?.org ?? "your"} workplace plan
           </div>
         </div>
         <div className="bg-surface border border-border rounded-xl p-[22px]">
@@ -48,16 +47,19 @@ export default function CreditsPage() {
             SPENT THIS MONTH
           </div>
           <div className="mt-[10px] text-[38px] font-semibold tracking-[-1.2px]">
-            {spent}
+            {spentThisMonth}
           </div>
           <div className="mt-3 text-[12.5px] text-text-faint">
-            Across 2 paid amenities
+            From your real booking history
           </div>
         </div>
       </div>
 
       <h2 className="mt-9 text-[17px] font-semibold tracking-[-0.3px]">Activity</h2>
       <div className="mt-[14px] bg-surface border border-border rounded-xl overflow-hidden">
+        {ledger.length === 0 && (
+          <div className="px-5 py-6 text-sm text-text-faint">No activity yet.</div>
+        )}
         {ledger.map((l) => (
           <div
             key={l.id}

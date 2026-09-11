@@ -1,10 +1,10 @@
 "use client";
 
 import { useAppState } from "@/lib/app-state";
-import { currentUser } from "@/lib/mock-data";
 
 export default function ProfilePage() {
-  const { credits } = useAppState();
+  const { user, credits } = useAppState();
+  if (!user) return null;
 
   return (
     <section className="animate-rise max-w-[560px]">
@@ -14,14 +14,14 @@ export default function ProfilePage() {
       <div className="mt-[22px] bg-surface border border-border rounded-xl p-6">
         <div className="flex items-center gap-[14px]">
           <div className="w-[52px] h-[52px] rounded-full bg-avatar-bg text-avatar-text flex items-center justify-center text-[19px] font-semibold">
-            {currentUser.avatarInitial}
+            {user.avatarInitial}
           </div>
           <div>
             <div className="text-[17px] font-semibold tracking-[-0.3px]">
-              {currentUser.name}
+              {user.name}
             </div>
             <div className="mt-[3px] text-[13px] text-text-faint">
-              {currentUser.org} · {currentUser.building} · Employee
+              {user.org} · {user.building}
             </div>
           </div>
         </div>
@@ -36,14 +36,14 @@ export default function ProfilePage() {
             <div className="text-[11px] tracking-[.06em] text-text-faint-2 font-mono">
               ELIGIBILITY
             </div>
-            <div className="mt-[5px] text-sm font-medium">{currentUser.eligibility}</div>
+            <div className="mt-[5px] text-sm font-medium">{user.eligibility}</div>
           </div>
           <div>
             <div className="text-[11px] tracking-[.06em] text-text-faint-2 font-mono">
               VOICE
             </div>
             <div className="mt-[5px] text-sm font-medium">
-              {currentUser.voiceEnabled ? "Enabled" : "Disabled"}
+              {user.voiceEnabled ? "Enabled" : "Disabled"}
             </div>
           </div>
         </div>

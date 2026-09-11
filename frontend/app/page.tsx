@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useAppState } from "@/lib/app-state";
-import { currentUser } from "@/lib/mock-data";
 import { stepLabels, useVoiceFlow } from "@/lib/use-voice-flow";
 import { Waveform } from "@/components/home/waveform";
 import { StepChecklist } from "@/components/home/step-checklist";
@@ -11,28 +10,51 @@ import { BookingConfirmCard } from "@/components/home/booking-confirm-card";
 import { UpcomingBookingCard } from "@/components/home/upcoming-booking-card";
 import type { Booking } from "@/lib/types";
 
+const DEMO_AMENITY_ID = "amenity_emerald";
+const DEMO_HOUR = 15; // 3 PM
+const DEMO_DURATION_MINUTES = 60;
+const DEMO_ATTENDEES = 5;
+
+/** Next occurrence of `hour` at least 5 minutes out, so the canned demo
+ * request never lands in the past regardless of when it's run. */
+function nextSlot(hour: number): Date {
+  const now = new Date();
+  const candidate = new Date(now);
+  candidate.setHours(hour, 0, 0, 0);
+  if (candidate.getTime() <= now.getTime() + 5 * 60 * 1000) {
+    candidate.setDate(candidate.getDate() + 1);
+  }
+  return candidate;
+}
+
 export default function HomePage() {
-  const { upcomingBookings, addBooking, pendingPrefill, setPendingPrefill } =
+  const { user, upcomingBookings, createRealBooking, pendingPrefill, setPendingPrefill } =
     useAppState();
   const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
+  const slotRef = useRef<Date | null>(null);
 
-  const handleDone = useCallback(() => {
-    const booking = addBooking({
-      amenityId: "am-emerald",
-      amenityName: "Emerald Meeting Room",
-      place: "Tower A · Floor 8",
-      when: "Today · 3:00 PM – 4:00 PM",
-      meta: "5 attendees",
-      attendees: 5,
-      costCredits: 0,
-      status: "confirmed",
-      createdVia: "voice",
+  const handleDone = useCallback(async () => {
+    const slot = slotRef.current ?? nextSlot(DEMO_HOUR);
+    const booking = await createRealBooking({
+      amenityId: DEMO_AMENITY_ID,
+      startTime: slot,
+      durationMinutes: DEMO_DURATION_MINUTES,
+      attendeeCount: DEMO_ATTENDEES,
     });
     setConfirmedBooking(booking);
-  }, [addBooking]);
+  }, [createRealBooking]);
 
-  const { voice, step, transcript, typed, setTyped, startVoice, resetVoice, sendTyped } =
-    useVoiceFlow(handleDone);
+  const {
+    voice,
+    step,
+    transcript,
+    typed,
+    setTyped,
+    errorMessage,
+    startVoice,
+    resetVoice,
+    sendTyped,
+  } = useVoiceFlow(handleDone);
 
   useEffect(() => {
     if (pendingPrefill) {
@@ -44,18 +66,32 @@ export default function HomePage() {
 
   const vIdle = voice === "idle";
   const vListen = voice === "listening";
-  const vAfter = voice === "processing" || voice === "done";
+  const vAfter = voice === "processing" || voice === "done" || voice === "error";
   const vDone = voice === "done";
+  const vError = voice === "error";
 
   const handleAskAgain = () => {
+    slotRef.current = null;
     resetVoice();
     setConfirmedBooking(null);
+  };
+
+  const handleStartVoice = () => {
+    slotRef.current = nextSlot(DEMO_HOUR);
+    startVoice();
+  };
+
+  const handleSendTyped = () => {
+    // No NLU yet — whatever's typed is echoed as "what you said", but the
+    // real request created is always this fixed demo slot.
+    slotRef.current = nextSlot(DEMO_HOUR);
+    sendTyped();
   };
 
   return (
     <section className="animate-rise">
       <h1 className="m-0 text-[28px] md:text-[32px] font-semibold tracking-[-0.7px]">
-        Good afternoon, {currentUser.name}
+        Good afternoon, {user?.name ?? ""}
       </h1>
       <p className="mt-2 text-base text-text-muted">
         What would you like to book today?
@@ -68,7 +104,7 @@ export default function HomePage() {
               <div className="relative flex items-center justify-center">
                 <div className="absolute w-[88px] h-[88px] md:w-[104px] md:h-[104px] rounded-full border border-accent-border animate-pulse-ring" />
                 <button
-                  onClick={startVoice}
+                  onClick={handleStartVoice}
                   className="relative w-[88px] h-[88px] md:w-[104px] md:h-[104px] rounded-full border border-accent bg-accent text-white cursor-pointer flex flex-col items-center justify-center gap-[6px] shadow-[0_6px_18px_rgba(15,92,82,.22)] transition-[transform,box-shadow] hover:-translate-y-[2px] hover:shadow-[0_10px_26px_rgba(15,92,82,.28)] active:scale-[.97]"
                 >
                   <span className="text-[22px] leading-none">◉</span>
@@ -107,9 +143,11 @@ export default function HomePage() {
                 &ldquo;{transcript}&rdquo;
               </div>
 
-              <div className="mt-[26px]">
-                <StepChecklist labels={stepLabels} step={step} />
-              </div>
+              {!vError && (
+                <div className="mt-[26px]">
+                  <StepChecklist labels={stepLabels} step={step} />
+                </div>
+              )}
 
               {vDone && (
                 <div className="mt-[22px] flex items-center gap-3 animate-pop">
@@ -128,6 +166,23 @@ export default function HomePage() {
                   </button>
                 </div>
               )}
+
+              {vError && (
+                <div className="mt-[22px] border border-danger-border bg-danger-bg-2 rounded-[10px] px-[18px] py-4">
+                  <div className="text-[14.5px] font-semibold text-danger-dark">
+                    Your booking couldn&apos;t be completed.
+                  </div>
+                  <div className="mt-[6px] text-[13.5px] text-danger-body leading-[1.55]">
+                    {errorMessage}
+                  </div>
+                  <button
+                    onClick={handleAskAgain}
+                    className="mt-3 border border-border bg-surface text-text-muted-2 rounded-lg px-3 py-2 text-[12.5px] hover:border-[#c9c9c1] hover:text-text"
+                  >
+                    Try again
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -140,13 +195,13 @@ export default function HomePage() {
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") sendTyped();
+              if (e.key === "Enter") handleSendTyped();
             }}
             placeholder="Book Sapphire tomorrow at 10 AM for 8 people"
             className="flex-1 min-w-0 border border-border rounded-lg px-3 py-[10px] text-[13.5px] bg-surface text-text outline-none focus:border-accent"
           />
           <button
-            onClick={sendTyped}
+            onClick={handleSendTyped}
             className="border-0 bg-dark text-white rounded-lg px-4 py-[10px] text-[13px] font-medium hover:bg-accent"
           >
             Send
@@ -167,6 +222,9 @@ export default function HomePage() {
         </Link>
       </div>
       <div className="mt-[14px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]">
+        {upcomingBookings.length === 0 && (
+          <div className="text-sm text-text-faint">No upcoming bookings yet.</div>
+        )}
         {upcomingBookings.slice(0, 3).map((b) => (
           <UpcomingBookingCard key={b.id} booking={b} />
         ))}

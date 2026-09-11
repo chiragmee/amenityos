@@ -51,6 +51,9 @@ export interface Booking {
   costCredits: number;
   status: BookingStatus;
   createdVia: "voice" | "text" | "manual";
+  accessToken: string | null;
+  startTime: string;
+  endTime: string;
 }
 
 export interface CreditLedgerEntry {
@@ -67,7 +70,6 @@ export interface User {
   building: string;
   role: "employee" | "admin";
   avatarInitial: string;
-  monthlyAllowance: number;
   eligibility: string;
   voiceEnabled: boolean;
 }

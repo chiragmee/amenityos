@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { currentUser } from "@/lib/mock-data";
+import { useAppState } from "@/lib/app-state";
 import { activeRootFor, sidebarNav } from "./nav-config";
 
 export function Sidebar() {
   const pathname = usePathname();
   const active = activeRootFor(pathname);
+  const { user } = useAppState();
 
   return (
     <aside className="hidden md:flex w-[252px] shrink-0 flex-col gap-0 bg-sidebar border-r border-border px-4 py-[22px] sticky top-0 h-screen">
@@ -51,11 +52,11 @@ export function Sidebar() {
 
       <div className="border-t border-border-rule pt-[14px] flex items-center gap-[10px]">
         <div className="w-8 h-8 rounded-full bg-avatar-bg text-avatar-text flex items-center justify-center text-[12.5px] font-semibold">
-          {currentUser.avatarInitial}
+          {user?.avatarInitial ?? ""}
         </div>
         <div className="min-w-0">
-          <div className="text-[13px] font-medium">{currentUser.name}</div>
-          <div className="text-[11.5px] text-text-faint">{currentUser.org}</div>
+          <div className="text-[13px] font-medium">{user?.name ?? ""}</div>
+          <div className="text-[11.5px] text-text-faint">{user?.org ?? ""}</div>
         </div>
         <div className="flex-1" />
         <Link

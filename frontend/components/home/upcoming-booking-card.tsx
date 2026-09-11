@@ -16,7 +16,7 @@ export function UpcomingBookingCard({ booking }: { booking: Booking }) {
       <div className="mt-4 pt-3 border-t border-border-hairline-2 flex items-center justify-between">
         <span className="text-[12.5px] text-text-faint">{booking.meta}</span>
         <Link
-          href="/pass"
+          href={`/pass/${booking.id}`}
           className="border border-border bg-surface text-text-secondary-2 rounded-md px-[10px] py-[6px] text-xs hover:border-[#c9c9c1]"
         >
           Access pass

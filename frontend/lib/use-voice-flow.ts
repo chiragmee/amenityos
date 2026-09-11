@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export type VoiceState = "idle" | "listening" | "processing" | "done";
+export type VoiceState = "idle" | "listening" | "processing" | "done" | "error";
 
 const STEP_DURATION_MS = 620;
 const DEFAULT_TRANSCRIPT =
@@ -15,11 +15,19 @@ export const stepLabels = [
   "Booking Emerald…",
 ];
 
-export function useVoiceFlow(onDone: () => void) {
+/**
+ * onDone performs the real booking. There's no NLU yet, so it always
+ * targets the same fixed demo request regardless of what's said/typed —
+ * the transcript is real user input, but only its *presence* triggers a
+ * booking, not its parsed meaning. Failure (conflict, insufficient
+ * credits, etc.) is now a real possibility once wired to a live backend.
+ */
+export function useVoiceFlow(onDone: () => Promise<void>) {
   const [voice, setVoice] = useState<VoiceState>("idle");
   const [step, setStep] = useState(0);
   const [transcript, setTranscript] = useState(DEFAULT_TRANSCRIPT);
   const [typed, setTyped] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const clear = useCallback(() => {
@@ -39,12 +47,17 @@ export function useVoiceFlow(onDone: () => void) {
       setVoice("processing");
       setStep(0);
       setTranscript(text);
+      setErrorMessage(null);
       for (let i = 1; i <= 4; i++) {
         at(STEP_DURATION_MS * i, () => setStep(i));
       }
       at(STEP_DURATION_MS * 4 + 240, () => {
-        setVoice("done");
-        onDone();
+        onDone()
+          .then(() => setVoice("done"))
+          .catch((err: unknown) => {
+            setErrorMessage(err instanceof Error ? err.message : "Something went wrong.");
+            setVoice("error");
+          });
       });
     },
     [at, clear, onDone]
@@ -62,6 +75,7 @@ export function useVoiceFlow(onDone: () => void) {
     setVoice("idle");
     setStep(0);
     setTyped("");
+    setErrorMessage(null);
   }, [clear]);
 
   const sendTyped = useCallback(() => {
@@ -75,6 +89,7 @@ export function useVoiceFlow(onDone: () => void) {
     transcript,
     typed,
     setTyped,
+    errorMessage,
     startVoice,
     resetVoice,
     sendTyped,

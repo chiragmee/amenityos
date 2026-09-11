@@ -1,22 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { amenities, findAmenity } from "@/lib/mock-data";
+import * as api from "@/lib/api-client";
+import { useAppState } from "@/lib/app-state";
 import { AmenityForm } from "@/components/admin/amenity-form";
 
-const rulesSummary: Record<string, string> = {
-  "am-emerald": "max 2h · 8 guests",
-  "am-sapphire": "max 3h · 12 guests",
-  "am-ruby": "max 1h · 4 guests",
-  "am-diamond": "max 4h · approval req.",
-  "am-gym": "max 1h · 1 per day",
-  "am-theater": "max 3h · approval req.",
-  "am-tabletennis": "max 30m · 2 per day",
-};
-
 export default function AdminPage() {
+  const { amenities, findAmenity } = useAppState();
   const [view, setView] = useState<"list" | "edit">("list");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [guidelines, setGuidelines] = useState("");
   const [saved, setSaved] = useState(false);
 
   const activeCount = amenities.filter((a) => a.active).length;
@@ -26,17 +19,25 @@ export default function AdminPage() {
     setEditingId(id);
     setView("edit");
     setSaved(false);
+    setGuidelines("Loading…");
+    api
+      .getAmenityPolicy(id)
+      .then((policy) => setGuidelines(policy.guidelines.map((g) => g.content).join("\n\n") || ""))
+      .catch(() => setGuidelines(""));
   };
   const openNew = () => {
     setEditingId(null);
     setView("edit");
     setSaved(false);
+    setGuidelines("");
   };
   const backToList = () => {
     setView("list");
     setSaved(false);
   };
   const save = () => {
+    // No PATCH /amenities endpoint exists yet — this reflects the change
+    // locally only. See backend/README.md for what's built vs. specified.
     setSaved(true);
     setTimeout(() => setSaved(false), 2600);
   };
@@ -56,9 +57,7 @@ export default function AdminPage() {
               Amenity configuration
             </h1>
             <p className="mt-2 text-[15px] text-text-muted">
-              {editing
-                ? `${editing.name} · last edited ${editing.lastEditedAt} by ${editing.lastEditedBy}`
-                : "New amenity · not yet published"}
+              {editing ? `${editing.name} · live from the backend` : "New amenity · not yet published"}
             </p>
           </div>
           <div className="flex-1" />
@@ -77,11 +76,12 @@ export default function AdminPage() {
 
         {saved && (
           <div className="mt-[18px] border border-accent-border bg-accent-bg-2 rounded-lg px-4 py-3 text-[13.5px] text-[#3f5c56] animate-rise">
-            Configuration saved. The assistant will enforce these rules on the next request.
+            Saved locally. There&apos;s no update endpoint on the backend yet,
+            so this doesn&apos;t persist — see backend/README.md.
           </div>
         )}
 
-        <AmenityForm amenity={editing} />
+        <AmenityForm amenity={editing} guidelines={guidelines} />
       </section>
     );
   }
@@ -133,7 +133,7 @@ export default function AdminPage() {
                 {a.costCredits === 0 ? "Free" : `${a.costCredits} credits`}
               </div>
               <div className="mt-[3px] text-[11.5px] text-text-faint-2 font-mono">
-                {rulesSummary[a.id]}
+                max {a.maxActiveBookingsPerUser} active · {a.workingHours}
               </div>
             </div>
             <div className="flex items-center gap-[10px]">

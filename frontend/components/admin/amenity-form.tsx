@@ -22,7 +22,13 @@ function Field({
 const inputClass =
   "w-full border border-border rounded-[7px] px-[10px] py-[9px] text-[13.5px] bg-surface text-text outline-none focus:border-accent";
 
-export function AmenityForm({ amenity }: { amenity: Amenity | null }) {
+export function AmenityForm({
+  amenity,
+  guidelines,
+}: {
+  amenity: Amenity | null;
+  guidelines: string;
+}) {
   const a = amenity;
   const typeOptions = ["Meeting room", "Conference room", "Fitness", "Recreation", "Theater"];
   const freePaidOptions = a && a.costCredits !== 0 ? ["Paid", "Free"] : ["Free", "Paid"];
@@ -180,10 +186,9 @@ export function AmenityForm({ amenity }: { amenity: Amenity | null }) {
           Plain-language rules. The assistant reads these when resolving requests.
         </p>
         <textarea
-          defaultValue={
-            a?.guidelines ??
-            "Maximum booking duration: 2 hours\nMaximum attendees: 8\nExternal guests: Not allowed\nFood: Not allowed\nAvailable Monday–Friday\nOperating hours: 8 AM–8 PM"
-          }
+          key={guidelines}
+          defaultValue={guidelines}
+          placeholder="Maximum booking duration: 2 hours&#10;Maximum attendees: 8&#10;External guests: Not allowed"
           rows={11}
           className="mt-[14px] w-full border border-border rounded-lg p-3 text-[13px] leading-[1.7] font-mono text-text bg-[#fcfcfa] outline-none resize-y focus:border-accent"
         />

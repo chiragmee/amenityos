@@ -55,7 +55,7 @@ export function BookingConfirmCard({
         </div>
         <div className="mt-[22px] flex flex-wrap gap-2">
           <Link
-            href="/pass"
+            href={`/pass/${booking.id}`}
             className="border-0 bg-dark text-white rounded-lg px-[15px] py-[10px] text-[13px] font-medium hover:bg-accent"
           >
             View booking
