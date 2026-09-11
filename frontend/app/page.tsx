@@ -35,6 +35,7 @@ export default function HomePage() {
     agentMessage,
     errorMessage,
     startVoice,
+    stopVoice,
     resetVoice,
     sendTyped,
     sendReply,
@@ -42,8 +43,8 @@ export default function HomePage() {
 
   const vIdle = voice === "idle";
   const vListen = voice === "listening";
-  const vAfter =
-    voice === "processing" || voice === "done" || voice === "needs-reply" || voice === "error";
+  const vTranscribing = voice === "transcribing";
+  const vAfter = voice === "processing" || voice === "done" || voice === "needs-reply" || voice === "error";
   const vDone = voice === "done";
   const vNeedsReply = voice === "needs-reply";
   const vError = voice === "error";
@@ -121,13 +122,24 @@ export default function HomePage() {
           )}
 
           {vListen && (
-            <>
+            <button
+              onClick={stopVoice}
+              className="w-full flex flex-col items-center border-0 bg-transparent cursor-pointer"
+              aria-label="Stop recording and send"
+            >
               <Waveform />
               <div className="mt-5 text-[17px] font-medium tracking-[-0.2px] text-text-primary">
                 Listening…
               </div>
-              <div className="mt-1 text-[13px] text-text-disabled">
-                release to send
+              <div className="mt-1 text-[13px] text-text-disabled">tap to stop</div>
+            </button>
+          )}
+
+          {vTranscribing && (
+            <>
+              <Waveform />
+              <div className="mt-5 text-[17px] font-medium tracking-[-0.2px] text-text-primary">
+                Transcribing…
               </div>
             </>
           )}

@@ -142,6 +142,35 @@ export function agentChat(payload: { session_id: string | null; user_id: string;
   });
 }
 
+export async function transcribeAudio(blob: Blob): Promise<string> {
+  const form = new FormData();
+  form.append("audio", blob, "recording.webm");
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}/voice/transcribe`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError("NETWORK_ERROR", "Could not reach the backend. Please try again.", 0);
+  }
+
+  if (!response.ok) {
+    let body: BackendErrorBody | null = null;
+    try {
+      body = await response.json();
+    } catch {
+      // non-JSON error body, fall through to generic message
+    }
+    throw new ApiError(
+      body?.error?.code ?? "UNKNOWN_ERROR",
+      body?.error?.message ?? "I couldn't understand that. Please try again.",
+      response.status
+    );
+  }
+
+  const data = (await response.json()) as { text: string };
+  return data.text;
+}
+
 export function newIdempotencyKey(): string {
   return `web-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }

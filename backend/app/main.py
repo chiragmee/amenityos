@@ -8,7 +8,8 @@ from sqlmodel import Session
 from .database import engine, init_db
 from .errors import AppError, app_error_handler
 from .rag.ingest import ingest_guidelines
-from .routers import access, agent, amenities, availability, bookings, health, users
+from .routers import access, agent, amenities, availability, bookings, health, users, voice
+from .voice.recognizer import get_recognizer
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,13 @@ async def lifespan(app: FastAPI):
         # Policy Q&A degrades (get_amenity_policy returns no chunks) but
         # the rest of the app must still boot — see docs/17-failure-modes.md.
         logger.exception("RAG: guideline ingestion failed at startup")
+    try:
+        get_recognizer().warm_up()
+        logger.info("Voice: STT model warmed up")
+    except Exception:
+        # Voice input degrades (transcription fails per-request) but the
+        # rest of the app must still boot.
+        logger.exception("Voice: STT model warm-up failed at startup")
     yield
 
 
@@ -45,3 +53,4 @@ app.include_router(availability.router)
 app.include_router(bookings.router)
 app.include_router(access.router)
 app.include_router(agent.router)
+app.include_router(voice.router)
