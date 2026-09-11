@@ -14,11 +14,13 @@ export interface Amenity {
   capacity: number;
   costCredits: number;
   active: boolean;
+  latitude: number | null;
+  longitude: number | null;
+  imageUrl: string | null;
 
-  workingHours: string;
   workingHoursStart: string;
   workingHoursEnd: string;
-  availableDays: string;
+  workingHours: string;
   minDurationMins: number;
   maxDurationMins: number;
   defaultDurationMins: number;
@@ -28,17 +30,15 @@ export interface Amenity {
   advanceBookingDaysLabel: string;
 
   maxActiveBookingsPerUser: number;
-  bookingFrequency: string;
-  eligibilityRule: string;
-  cancellationPolicy: string;
+  cancellationWindowMinutes: number;
+  eligibleRoles: string[];
+  eligibleCompanies: string[];
+  allowedWeekdays: string[];
 
   description: string;
   guidelines: string;
   shotLabel: string;
   availabilityLabel: string;
-
-  lastEditedAt: string | null;
-  lastEditedBy: string | null;
 }
 
 export type BookingStatus = "confirmed" | "completed" | "cancelled";
@@ -72,10 +72,8 @@ export interface User {
   name: string;
   org: string;
   building: string;
-  role: "employee" | "admin";
+  role: "employee" | "manager" | "admin" | "guest";
   avatarInitial: string;
-  eligibility: string;
-  voiceEnabled: boolean;
 }
 
 export type ScenarioKey = "unavailable" | "paid" | "low" | "capacity";

@@ -21,6 +21,10 @@ def tomorrow_at(hour: int, minute: int = 0) -> str:
     return dt.isoformat()
 
 
+def soon(minutes: int) -> str:
+    return (datetime.now(timezone.utc) + timedelta(minutes=minutes)).isoformat()
+
+
 def new_key() -> str:
     return f"test-{uuid.uuid4().hex[:10]}"
 
@@ -250,6 +254,106 @@ def test_access_verify_rejects_tampered_token(client: TestClient):
     body = response.json()
     assert body["allowed"] is False
     assert body["reason"] == "TOKEN_INVALID"
+
+
+def test_cancel_booking_refunds_when_outside_cancellation_window(client: TestClient):
+    booked = book(
+        client,
+        user_id="usr_chirag",
+        amenity_id="amenity_gym",
+        start_time=tomorrow_at(8),  # ~24h out, gym's 30-min cancellation window doesn't apply
+        duration_minutes=60,
+        attendee_count=1,
+    )
+    assert booked.status_code == 201, booked.text
+    booking_id = booked.json()["id"]
+    assert client.get("/users/usr_chirag/credits").json()["balance"] == 14  # 24 - 10
+
+    response = client.post(f"/bookings/{booking_id}/cancel", json={"user_id": "usr_chirag"})
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "cancelled"
+    assert body["refunded_credits"] == 10
+
+    assert client.get("/users/usr_chirag/credits").json()["balance"] == 24  # refunded
+    booking = client.get(f"/bookings/{booking_id}").json()
+    assert booking["status"] == "cancelled"
+
+
+def test_cancel_booking_no_refund_within_cancellation_window(session, client: TestClient):
+    # Seeded directly rather than via /bookings, so this doesn't depend on
+    # wall-clock working-hours validation for a "starts in a few minutes"
+    # time — it only needs to exercise cancel_booking's own refund-window
+    # logic against a booking that's already confirmed.
+    from datetime import datetime, timedelta, timezone
+
+    from app.models import Booking, BookingStatus, CreditLedger, TransactionType
+
+    start = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=10)
+    booking = Booking(
+        id="bk_test_soon",
+        user_id="usr_chirag",
+        amenity_id="amenity_gym",  # cancellation_window_minutes=30
+        start_time=start,
+        end_time=start + timedelta(minutes=60),
+        status=BookingStatus.confirmed,
+        attendee_count=1,
+        idempotency_key="test-soon-key",
+    )
+    session.add(booking)
+    session.add(
+        CreditLedger(
+            user_id="usr_chirag",
+            booking_id=booking.id,
+            transaction_type=TransactionType.debit,
+            amount=-10,
+            balance_after=14,
+        )
+    )
+    session.commit()
+
+    response = client.post("/bookings/bk_test_soon/cancel", json={"user_id": "usr_chirag"})
+    assert response.status_code == 200, response.text
+    assert response.json()["refunded_credits"] == 0
+    assert client.get("/users/usr_chirag/credits").json()["balance"] == 14  # unchanged, no refund
+
+
+def test_cancel_booking_wrong_user_denied(client: TestClient):
+    booked = book(
+        client,
+        user_id="usr_chirag",
+        amenity_id="amenity_sapphire",
+        start_time=tomorrow_at(13),
+        duration_minutes=60,
+        attendee_count=2,
+    )
+    booking_id = booked.json()["id"]
+
+    response = client.post(f"/bookings/{booking_id}/cancel", json={"user_id": "usr_rahul"})
+    assert response.status_code == 403, response.text
+    assert response.json()["error"]["code"] == "ACCESS_DENIED"
+
+    booking = client.get(f"/bookings/{booking_id}").json()
+    assert booking["status"] == "confirmed"  # untouched
+
+
+def test_cancel_already_cancelled_booking_rejected(client: TestClient):
+    booked = book(
+        client,
+        user_id="usr_chirag",
+        amenity_id="amenity_diamond",
+        start_time=tomorrow_at(11),
+        duration_minutes=60,
+        attendee_count=2,
+    )
+    booking_id = booked.json()["id"]
+
+    first = client.post(f"/bookings/{booking_id}/cancel", json={"user_id": "usr_chirag"})
+    assert first.status_code == 200, first.text
+
+    second = client.post(f"/bookings/{booking_id}/cancel", json={"user_id": "usr_chirag"})
+    assert second.status_code == 422, second.text
+    assert second.json()["error"]["code"] == "BOOKING_NOT_CANCELLABLE"
 
 
 def test_validate_endpoint_matches_create_outcome(client: TestClient):

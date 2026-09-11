@@ -42,6 +42,7 @@ interface AppState {
   findAmenity: (id: string) => Amenity | undefined;
   refresh: () => Promise<void>;
   createRealBooking: (input: CreateBookingInput) => Promise<Booking>;
+  cancelRealBooking: (bookingId: string) => Promise<{ refundedCredits: number }>;
   sendAgentMessage: (
     sessionId: string | null,
     message: string,
@@ -163,6 +164,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [load, amenitiesById]
   );
 
+  const cancelRealBooking = useCallback(
+    async (bookingId: string) => {
+      const result = await api.cancelBooking(bookingId, api.CURRENT_USER_ID);
+      await load();
+      return { refundedCredits: result.refunded_credits };
+    },
+    [load]
+  );
+
   const sendAgentMessage = useCallback(
     async (sessionId: string | null, message: string, userId?: string) => {
       const result = await api.agentChat({
@@ -195,6 +205,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     findAmenity,
     refresh: load,
     createRealBooking,
+    cancelRealBooking,
     sendAgentMessage,
   };
 

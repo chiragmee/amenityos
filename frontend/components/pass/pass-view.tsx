@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import * as api from "@/lib/api-client";
+import { downloadBookingIcs } from "@/lib/calendar";
 import { useAppState } from "@/lib/app-state";
-import { placeholderQrDataUri } from "@/lib/qr";
+import { generateAccessQrDataUri } from "@/lib/qr";
 import { StatusPill } from "@/components/ui/status-pill";
 
 export function PassView({ bookingId }: { bookingId?: string }) {
@@ -17,6 +18,7 @@ export function PassView({ bookingId }: { bookingId?: string }) {
   const [verified, setVerified] = useState<{ allowed: boolean; reason?: string } | null>(
     null
   );
+  const [qrDataUri, setQrDataUri] = useState<string | null>(null);
 
   useEffect(() => {
     if (!booking?.accessToken) return;
@@ -29,6 +31,17 @@ export function PassView({ bookingId }: { bookingId?: string }) {
       .catch(() => {
         if (!cancelled) setVerified({ allowed: false, reason: "TOKEN_INVALID" });
       });
+    return () => {
+      cancelled = true;
+    };
+  }, [booking?.accessToken]);
+
+  useEffect(() => {
+    if (!booking?.accessToken) return;
+    let cancelled = false;
+    generateAccessQrDataUri(booking.accessToken).then((uri) => {
+      if (!cancelled) setQrDataUri(uri);
+    });
     return () => {
       cancelled = true;
     };
@@ -63,11 +76,15 @@ export function PassView({ bookingId }: { bookingId?: string }) {
         {isActive ? (
           <>
             <StatusPill tone="accent">Active</StatusPill>
-            <img
-              src={placeholderQrDataUri()}
-              alt="Access QR code"
-              className="block mx-auto mt-[26px] w-[232px] h-[232px] border border-border rounded-2xl animate-pop"
-            />
+            {qrDataUri ? (
+              <img
+                src={qrDataUri}
+                alt="Access QR code"
+                className="block mx-auto mt-[26px] w-[232px] h-[232px] border border-border rounded-2xl animate-pop"
+              />
+            ) : (
+              <div className="mx-auto mt-[26px] w-[232px] h-[232px] border border-border-subtle rounded-2xl bg-surface-subtle" />
+            )}
             <div className="mt-[18px] text-[13px] text-text-disabled">
               {booking.displayId}
             </div>
@@ -77,11 +94,13 @@ export function PassView({ bookingId }: { bookingId?: string }) {
             <StatusPill tone="neutral">
               {booking.status === "cancelled" ? "Cancelled" : "Expired"}
             </StatusPill>
-            <img
-              src={placeholderQrDataUri()}
-              alt="Expired QR code"
-              className="block mx-auto mt-[26px] w-[232px] h-[232px] border border-border-subtle rounded-2xl grayscale opacity-[.24]"
-            />
+            {qrDataUri && (
+              <img
+                src={qrDataUri}
+                alt="Expired QR code"
+                className="block mx-auto mt-[26px] w-[232px] h-[232px] border border-border-subtle rounded-2xl grayscale opacity-[.24]"
+              />
+            )}
             <div className="mt-[18px] text-[13.5px] text-text-disabled">
               This access pass is no longer valid.
             </div>
@@ -123,7 +142,10 @@ export function PassView({ bookingId }: { bookingId?: string }) {
         >
           Back to bookings
         </Link>
-        <button className="border border-border bg-surface text-text-secondary-2 rounded-lg px-[15px] py-[10px] text-[13px] hover:border-[#c9c9c1]">
+        <button
+          onClick={() => downloadBookingIcs(booking)}
+          className="border border-border bg-surface text-text-secondary-2 rounded-lg px-[15px] py-[10px] text-[13px] hover:border-[#c9c9c1]"
+        >
           Add to calendar
         </button>
       </div>

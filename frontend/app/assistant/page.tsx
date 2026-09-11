@@ -110,7 +110,11 @@ export default function AssistantPage() {
       </div>
 
       {booking && (
-        <BookingConfirmCard booking={booking} onAskAgain={() => selectScenario(scenario)} />
+        <BookingConfirmCard
+          booking={booking}
+          onAskAgain={() => selectScenario(scenario)}
+          onCancelled={() => selectScenario(scenario)}
+        />
       )}
     </section>
   );

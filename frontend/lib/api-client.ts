@@ -3,8 +3,10 @@ import type {
   BackendAgentChatResponse,
   BackendAmenity,
   BackendAmenityPolicy,
+  BackendAmenityWrite,
   BackendAvailability,
   BackendBooking,
+  BackendCancelResult,
   BackendCredits,
   BackendErrorBody,
   BackendMetrics,
@@ -79,6 +81,20 @@ export function getAmenityPolicy(amenityId: string) {
   return request<BackendAmenityPolicy>(`/amenities/${amenityId}/policy`);
 }
 
+export function createAmenity(payload: BackendAmenityWrite) {
+  return request<BackendAmenity>("/amenities", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAmenity(amenityId: string, payload: BackendAmenityWrite) {
+  return request<BackendAmenity>(`/amenities/${amenityId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function checkAvailability(payload: {
   amenity_id: string;
   start_time: string;
@@ -121,6 +137,13 @@ export function createBooking(payload: {
 
 export function getBooking(bookingId: string) {
   return request<BackendBooking>(`/bookings/${bookingId}`);
+}
+
+export function cancelBooking(bookingId: string, userId: string) {
+  return request<BackendCancelResult>(`/bookings/${bookingId}/cancel`, {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId }),
+  });
 }
 
 export function getUserBookings(userId: string) {

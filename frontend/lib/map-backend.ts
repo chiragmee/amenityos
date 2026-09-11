@@ -21,12 +21,6 @@ const SHOT_LABEL_BY_TYPE: Record<string, string> = {
   Recreation: "lounge photo",
 };
 
-/**
- * Fields with no backend counterpart (booking frequency, eligibility-rule
- * summary, cancellation policy copy) get honest-but-generic placeholders —
- * the real constraints live in AmenityRule rows the amenities endpoint
- * doesn't expose yet, not in these display strings.
- */
 export function mapAmenity(a: BackendAmenity): Amenity {
   return {
     id: a.id,
@@ -37,11 +31,13 @@ export function mapAmenity(a: BackendAmenity): Amenity {
     capacity: a.capacity,
     costCredits: a.credit_cost,
     active: a.is_active,
+    latitude: a.latitude,
+    longitude: a.longitude,
+    imageUrl: a.image_url,
 
-    workingHours: formatHoursLabel(a.working_hours_start, a.working_hours_end),
     workingHoursStart: a.working_hours_start,
     workingHoursEnd: a.working_hours_end,
-    availableDays: "See working hours",
+    workingHours: formatHoursLabel(a.working_hours_start, a.working_hours_end),
     minDurationMins: a.minimum_duration_minutes,
     maxDurationMins: a.maximum_duration_minutes,
     defaultDurationMins: a.default_duration_minutes,
@@ -51,17 +47,15 @@ export function mapAmenity(a: BackendAmenity): Amenity {
     advanceBookingDaysLabel: formatAdvanceWindow(a.advance_booking_hours),
 
     maxActiveBookingsPerUser: a.max_bookings_per_user,
-    bookingFrequency: `${a.max_bookings_per_user} active at a time`,
-    eligibilityRule: "Set via amenity rules",
-    cancellationPolicy: `Free until ${a.cancellation_window_minutes} min before`,
+    cancellationWindowMinutes: a.cancellation_window_minutes,
+    eligibleRoles: a.eligible_roles,
+    eligibleCompanies: a.eligible_companies,
+    allowedWeekdays: a.allowed_weekdays,
 
     description: a.description,
     guidelines: "",
     shotLabel: SHOT_LABEL_BY_TYPE[a.type] ?? "photo",
     availabilityLabel: a.type,
-
-    lastEditedAt: null,
-    lastEditedBy: null,
   };
 }
 
@@ -110,17 +104,13 @@ export function mapLedgerEntry(
   };
 }
 
-/** eligibility has no dedicated backend field/endpoint yet — kept as
- * static UI copy, same as before this wiring pass. */
 export function mapUser(u: BackendUser): User {
   return {
     id: u.id,
     name: u.name,
     org: u.company,
     building: u.building,
-    role: u.role === "admin" ? "admin" : "employee",
+    role: u.role,
     avatarInitial: u.name.charAt(0).toUpperCase(),
-    eligibility: "All amenities",
-    voiceEnabled: true,
   };
 }

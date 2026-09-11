@@ -1,15 +1,62 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { placeholderQrDataUri } from "@/lib/qr";
+import { downloadBookingIcs } from "@/lib/calendar";
+import { generateAccessQrDataUri } from "@/lib/qr";
+import { useAppState } from "@/lib/app-state";
 import type { Booking } from "@/lib/types";
 import { StatusPill } from "@/components/ui/status-pill";
 
 export function BookingConfirmCard({
   booking,
   onAskAgain,
+  onCancelled,
 }: {
   booking: Booking;
   onAskAgain: () => void;
+  onCancelled: () => void;
 }) {
+  const { cancelRealBooking } = useAppState();
+  const [qrDataUri, setQrDataUri] = useState<string | null>(null);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!booking.accessToken) return;
+    let cancelled = false;
+    generateAccessQrDataUri(booking.accessToken).then((uri) => {
+      if (!cancelled) setQrDataUri(uri);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [booking.accessToken]);
+
+  useEffect(() => {
+    if (!confirmingCancel) return;
+    const t = setTimeout(() => setConfirmingCancel(false), 4000);
+    return () => clearTimeout(t);
+  }, [confirmingCancel]);
+
+  const handleCancelClick = async () => {
+    if (!confirmingCancel) {
+      setConfirmingCancel(true);
+      return;
+    }
+    setCancelling(true);
+    setCancelError(null);
+    try {
+      await cancelRealBooking(booking.id);
+      onCancelled();
+    } catch (err) {
+      setCancelError(err instanceof Error ? err.message : "Could not cancel this booking.");
+      setCancelling(false);
+      setConfirmingCancel(false);
+    }
+  };
+
   return (
     <div className="mt-5 bg-surface border border-border rounded-[24px] p-[26px] grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-7 animate-rise shadow-[0_2px_8px_rgba(34,38,43,0.06)]">
       <div>
@@ -44,6 +91,13 @@ export function BookingConfirmCard({
             </div>
           </div>
         </div>
+
+        {cancelError && (
+          <div className="mt-4 border border-danger-border-tint bg-danger-tint rounded-[14px] px-4 py-3 text-[13px] text-danger-dark">
+            {cancelError}
+          </div>
+        )}
+
         <div className="mt-[22px] flex flex-wrap gap-2">
           <Link
             href={`/pass/${booking.id}`}
@@ -51,23 +105,31 @@ export function BookingConfirmCard({
           >
             View booking
           </Link>
-          <button className="border border-border bg-surface text-text-secondary rounded-full px-[18px] py-[10px] text-[13px] hover:border-text-disabled">
+          <button
+            onClick={() => downloadBookingIcs(booking)}
+            className="border border-border bg-surface text-text-secondary rounded-full px-[18px] py-[10px] text-[13px] hover:border-text-disabled"
+          >
             Add to calendar
           </button>
           <button
-            onClick={onAskAgain}
-            className="border border-danger-border-tint bg-surface text-danger rounded-full px-[18px] py-[10px] text-[13px] hover:bg-danger-tint"
+            onClick={handleCancelClick}
+            disabled={cancelling}
+            className="border border-danger-border-tint bg-surface text-danger rounded-full px-[18px] py-[10px] text-[13px] hover:bg-danger-tint disabled:opacity-50"
           >
-            Cancel booking
+            {cancelling ? "Cancelling…" : confirmingCancel ? "Click to confirm cancellation" : "Cancel booking"}
           </button>
         </div>
       </div>
       <div className="w-full md:w-[196px] text-center md:border-l border-border-subtle md:pl-[26px]">
-        <img
-          src={placeholderQrDataUri()}
-          alt="Access QR code"
-          className="w-[150px] h-[150px] border border-border rounded-2xl animate-pop mx-auto"
-        />
+        {qrDataUri ? (
+          <img
+            src={qrDataUri}
+            alt="Access QR code"
+            className="w-[150px] h-[150px] border border-border rounded-2xl animate-pop mx-auto"
+          />
+        ) : (
+          <div className="w-[150px] h-[150px] border border-border-subtle rounded-2xl mx-auto bg-surface-subtle" />
+        )}
         <div className="mt-3 text-[11.5px] text-text-disabled leading-[1.5]">
           Show this QR code at the amenity entrance.
         </div>

@@ -231,7 +231,11 @@ export default function HomePage() {
       </div>
 
       {vDone && confirmedBooking && (
-        <BookingConfirmCard booking={confirmedBooking} onAskAgain={handleAskAgain} />
+        <BookingConfirmCard
+          booking={confirmedBooking}
+          onAskAgain={handleAskAgain}
+          onCancelled={() => setConfirmedBooking(null)}
+        />
       )}
 
       <div className="mt-11 flex items-baseline gap-3">

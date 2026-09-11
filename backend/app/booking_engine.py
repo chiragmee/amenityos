@@ -367,3 +367,60 @@ def create_booking(
 
     session.refresh(booking)
     return booking, credits_deducted
+
+
+def cancel_booking(session: Session, booking_id: str, user_id: str) -> tuple[Booking, int]:
+    """Cancel a confirmed booking. Returns (booking, refunded_credits).
+
+    Refund per docs/09-booking-lifecycle.md ("Credit refund behavior should
+    be determined by the configured cancellation policy and implemented
+    deterministically"): if cancelled with at least
+    amenity.cancellation_window_minutes notice before start_time, refund
+    whatever was originally deducted; otherwise no refund. Status change
+    and refund ledger entry are one transaction.
+    """
+    booking = session.get(Booking, booking_id)
+    if booking is None:
+        raise AppError(ErrorCode.BOOKING_NOT_FOUND, f"No booking with id '{booking_id}'.")
+    if booking.user_id != user_id:
+        raise AppError(ErrorCode.ACCESS_DENIED, "That booking does not belong to you.")
+    if booking.status != BookingStatus.confirmed:
+        raise AppError(
+            ErrorCode.BOOKING_NOT_CANCELLABLE,
+            f"This booking cannot be cancelled (status: {booking.status.value}).",
+        )
+
+    amenity = get_amenity_or_404(session, booking.amenity_id)
+    now = utcnow()
+    within_window = now + timedelta(minutes=amenity.cancellation_window_minutes) <= booking.start_time
+
+    refund = 0
+    if within_window:
+        ledger_row = session.exec(
+            select(CreditLedger).where(
+                CreditLedger.booking_id == booking.id,
+                CreditLedger.transaction_type == TransactionType.debit,
+            )
+        ).first()
+        refund = -ledger_row.amount if ledger_row else 0
+
+    booking.status = BookingStatus.cancelled
+    booking.cancelled_at = now
+    session.add(booking)
+
+    if refund > 0:
+        new_balance = get_current_balance(session, user_id) + refund
+        session.add(
+            CreditLedger(
+                user_id=user_id,
+                booking_id=booking.id,
+                transaction_type=TransactionType.refund,
+                amount=refund,
+                balance_after=new_balance,
+            )
+        )
+
+    _log_audit(session, user_id, "cancel_booking", "booking", booking.id, AuditResult.success)
+    session.commit()
+    session.refresh(booking)
+    return booking, refund

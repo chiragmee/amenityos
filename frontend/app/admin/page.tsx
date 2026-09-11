@@ -4,23 +4,29 @@ import { useState } from "react";
 import * as api from "@/lib/api-client";
 import { useAppState } from "@/lib/app-state";
 import { AmenityForm } from "@/components/admin/amenity-form";
+import { useAmenityForm } from "@/components/admin/use-amenity-form";
 import { StatusPill } from "@/components/ui/status-pill";
 
 export default function AdminPage() {
-  const { amenities, findAmenity } = useAppState();
+  const { amenities, findAmenity, refresh } = useAppState();
   const [view, setView] = useState<"list" | "edit">("list");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [guidelines, setGuidelines] = useState("");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const activeCount = amenities.filter((a) => a.active).length;
   const editing = editingId ? findAmenity(editingId) ?? null : null;
+  const { values, set, toggleListValue, toPayload } = useAmenityForm(editing, guidelines);
 
   const openEdit = (id: string) => {
     setEditingId(id);
     setView("edit");
     setSaved(false);
-    setGuidelines("Loading…");
+    setError(null);
+    setGuidelines("");
     api
       .getAmenityPolicy(id)
       .then((policy) => setGuidelines(policy.guidelines.map((g) => g.content).join("\n\n") || ""))
@@ -30,17 +36,49 @@ export default function AdminPage() {
     setEditingId(null);
     setView("edit");
     setSaved(false);
+    setError(null);
     setGuidelines("");
   };
   const backToList = () => {
     setView("list");
     setSaved(false);
+    setError(null);
   };
-  const save = () => {
-    // No PATCH /amenities endpoint exists yet — this reflects the change
-    // locally only. See backend/README.md for what's built vs. specified.
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2600);
+
+  const save = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      if (editingId) {
+        await api.updateAmenity(editingId, toPayload());
+        await refresh();
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2600);
+      } else {
+        await api.createAmenity(toPayload());
+        await refresh();
+        setView("list");
+      }
+    } catch (err) {
+      setError(err instanceof api.ApiError ? err.message : "Could not save this amenity.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deactivate = async () => {
+    if (!editingId) return;
+    setDeactivating(true);
+    setError(null);
+    try {
+      await api.updateAmenity(editingId, { is_active: false });
+      await refresh();
+      setView("list");
+    } catch (err) {
+      setError(err instanceof api.ApiError ? err.message : "Could not deactivate this amenity.");
+    } finally {
+      setDeactivating(false);
+    }
   };
 
   if (view === "edit") {
@@ -65,24 +103,35 @@ export default function AdminPage() {
           <div className="flex gap-2">
             <button
               onClick={save}
-              className="border-0 bg-brand text-white rounded-full px-4 py-[10px] text-[13px] font-medium hover:bg-brand-dark"
+              disabled={saving || deactivating}
+              className="border-0 bg-brand text-white rounded-full px-4 py-[10px] text-[13px] font-medium hover:bg-brand-dark disabled:opacity-50"
             >
-              Save amenity
+              {saving ? "Saving…" : "Save amenity"}
             </button>
-            <button className="border border-danger-border bg-surface text-danger rounded-lg px-4 py-[10px] text-[13px] hover:bg-danger-bg">
-              Deactivate
-            </button>
+            {editingId && (
+              <button
+                onClick={deactivate}
+                disabled={saving || deactivating}
+                className="border border-danger-border bg-surface text-danger rounded-lg px-4 py-[10px] text-[13px] hover:bg-danger-bg disabled:opacity-50"
+              >
+                {deactivating ? "Deactivating…" : "Deactivate"}
+              </button>
+            )}
           </div>
         </div>
 
         {saved && (
           <div className="mt-[18px] border border-accent-border-tint bg-accent-tint rounded-2xl px-4 py-3 text-[13.5px] text-text-primary animate-rise">
-            Saved locally. There&apos;s no update endpoint on the backend yet,
-            so this doesn&apos;t persist — see backend/README.md.
+            Saved to the backend.
+          </div>
+        )}
+        {error && (
+          <div className="mt-[18px] border border-danger-border-tint bg-danger-tint rounded-2xl px-4 py-3 text-[13.5px] text-danger-dark animate-rise">
+            {error}
           </div>
         )}
 
-        <AmenityForm amenity={editing} guidelines={guidelines} />
+        <AmenityForm values={values} set={set} toggleListValue={toggleListValue} />
       </section>
     );
   }

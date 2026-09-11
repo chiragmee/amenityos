@@ -1,11 +1,18 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 
-from ..booking_engine import create_booking, get_amenity_or_404, get_user_or_404, validate_booking
+from ..booking_engine import cancel_booking, create_booking, get_amenity_or_404, get_user_or_404, validate_booking
 from ..database import get_session
 from ..errors import AppError, ErrorCode
 from ..models import CreditLedger
-from ..schemas import BookingCreateRequest, BookingOut, BookingValidateRequest, BookingValidateResponse
+from ..schemas import (
+    BookingCancelRequest,
+    BookingCancelResponse,
+    BookingCreateRequest,
+    BookingOut,
+    BookingValidateRequest,
+    BookingValidateResponse,
+)
 from ..models import Booking
 
 router = APIRouter()
@@ -54,6 +61,19 @@ def create_booking_route(payload: BookingCreateRequest, session: Session = Depen
         credits_deducted=credits_deducted,
         access_token=booking.access_token_id,
         created_at=booking.created_at,
+    )
+
+
+@router.post("/bookings/{booking_id}/cancel", response_model=BookingCancelResponse)
+def cancel_booking_route(
+    booking_id: str, payload: BookingCancelRequest, session: Session = Depends(get_session)
+):
+    booking, refunded = cancel_booking(session, booking_id, payload.user_id)
+    return BookingCancelResponse(
+        id=booking.id,
+        status=booking.status,
+        cancelled_at=booking.cancelled_at,
+        refunded_credits=refunded,
     )
 
 

@@ -34,17 +34,9 @@ export default function ProfilePage() {
           </div>
           <div>
             <div className="text-[11px] tracking-[.06em] text-text-faint-2 font-mono">
-              ELIGIBILITY
+              ROLE
             </div>
-            <div className="mt-[5px] text-sm font-medium">{user.eligibility}</div>
-          </div>
-          <div>
-            <div className="text-[11px] tracking-[.06em] text-text-faint-2 font-mono">
-              VOICE
-            </div>
-            <div className="mt-[5px] text-sm font-medium">
-              {user.voiceEnabled ? "Enabled" : "Disabled"}
-            </div>
+            <div className="mt-[5px] text-sm font-medium capitalize">{user.role}</div>
           </div>
         </div>
       </div>

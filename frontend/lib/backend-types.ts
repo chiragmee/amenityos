@@ -21,6 +21,9 @@ export interface BackendAmenity {
   building: string;
   floor: number;
   capacity: number;
+  latitude: number | null;
+  longitude: number | null;
+  image_url: string | null;
   default_duration_minutes: number;
   minimum_duration_minutes: number;
   maximum_duration_minutes: number;
@@ -33,6 +36,37 @@ export interface BackendAmenity {
   advance_booking_hours: number;
   cancellation_window_minutes: number;
   is_active: boolean;
+  eligible_roles: string[];
+  eligible_companies: string[];
+  allowed_weekdays: string[];
+}
+
+export interface BackendAmenityWrite {
+  name?: string;
+  description?: string;
+  type?: string;
+  building?: string;
+  floor?: number;
+  capacity?: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  image_url?: string | null;
+  default_duration_minutes?: number;
+  minimum_duration_minutes?: number;
+  maximum_duration_minutes?: number;
+  allowed_durations?: number[];
+  working_hours_start?: string;
+  working_hours_end?: string;
+  is_paid?: boolean;
+  credit_cost?: number;
+  max_bookings_per_user?: number;
+  advance_booking_hours?: number;
+  cancellation_window_minutes?: number;
+  is_active?: boolean;
+  eligible_roles?: string[];
+  eligible_companies?: string[];
+  allowed_weekdays?: string[];
+  guideline?: string;
 }
 
 export interface BackendGuideline {
@@ -139,6 +173,13 @@ export interface BackendTraceDetail extends BackendTraceSummary {
   tool_calls: BackendToolCall[];
   retrieval_query: string | null;
   retrieved_chunk_ids: string[] | null;
+}
+
+export interface BackendCancelResult {
+  id: string;
+  status: "confirmed" | "cancelled" | "completed";
+  cancelled_at: string | null;
+  refunded_credits: number;
 }
 
 export interface BackendMetrics {
