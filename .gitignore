@@ -25,3 +25,6 @@ backend/**/__pycache__/
 backend/*.db
 backend/.pytest_cache/
 backend/*.egg-info/
+
+# Supabase CLI local cache (project link, not project source)
+supabase/.temp/
