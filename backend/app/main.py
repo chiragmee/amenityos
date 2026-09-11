@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .database import init_db
 from .errors import AppError, app_error_handler
-from .routers import access, amenities, availability, bookings, health, users
+from .routers import access, agent, amenities, availability, bookings, health, users
 
 
 @asynccontextmanager
@@ -31,3 +31,4 @@ app.include_router(amenities.router)
 app.include_router(availability.router)
 app.include_router(bookings.router)
 app.include_router(access.router)
+app.include_router(agent.router)
