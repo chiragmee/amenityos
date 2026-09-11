@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import { useAppState } from "@/lib/app-state";
 import { stepLabels, useVoiceFlow } from "@/lib/use-voice-flow";
@@ -28,8 +28,7 @@ function nextSlot(hour: number): Date {
 }
 
 export default function HomePage() {
-  const { user, upcomingBookings, createRealBooking, pendingPrefill, setPendingPrefill } =
-    useAppState();
+  const { user, upcomingBookings, createRealBooking } = useAppState();
   const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
   const slotRef = useRef<Date | null>(null);
 
@@ -55,14 +54,6 @@ export default function HomePage() {
     resetVoice,
     sendTyped,
   } = useVoiceFlow(handleDone);
-
-  useEffect(() => {
-    if (pendingPrefill) {
-      setTyped(pendingPrefill);
-      setPendingPrefill(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingPrefill]);
 
   const vIdle = voice === "idle";
   const vListen = voice === "listening";

@@ -33,9 +33,9 @@ The frontend (built, deployed, wired to the real backend) implements eight scree
 
 | Screen | What it does |
 |---|---|
-| **Home** | Hold-to-speak or type a request; watches the agent's request → availability → rules → booking pipeline resolve step by step; shows the resulting confirmation, QR access pass, and upcoming bookings |
+| **Home** | Hold-to-speak or type a request; watches the agent's request → availability → rules → booking pipeline resolve step by step; shows the resulting confirmation, QR access pass, and upcoming bookings. This is a convenience layer — there's no NLU yet, so it always targets one fixed demo slot regardless of what's said |
 | **AI Assistant** | A guided walkthrough of four non-happy-path resolutions the agent must handle: slot unavailable (offers alternatives), paid amenity (asks for confirmation before charging), insufficient credits (blocks the booking, offers to contact an admin), capacity exceeded (offers a bigger room) |
-| **Amenities** | Browsable catalog of bookable amenities with live-style availability, capacity, and pricing |
+| **Amenities** | Browsable catalog; "Book" opens a real booking form for that specific amenity — pick date/time/duration/attendees, see live validation (availability, capacity, credits) against the real backend, and confirm. This is the primary, reliable way to book anything — voice/text on Home is a convenience on top of it, not a replacement |
 | **My Bookings** | Upcoming and past bookings with status (confirmed / completed / cancelled) |
 | **Credits** | Monthly credit allowance, remaining balance, and a spend ledger |
 | **Admin** | Configure amenities: schedule, capacity, duration rules, eligibility, pricing, and a plain-language guidelines field the agent reads when resolving requests |

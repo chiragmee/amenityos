@@ -39,11 +39,15 @@ export function mapAmenity(a: BackendAmenity): Amenity {
     active: a.is_active,
 
     workingHours: formatHoursLabel(a.working_hours_start, a.working_hours_end),
+    workingHoursStart: a.working_hours_start,
+    workingHoursEnd: a.working_hours_end,
     availableDays: "See working hours",
     minDurationMins: a.minimum_duration_minutes,
     maxDurationMins: a.maximum_duration_minutes,
     defaultDurationMins: a.default_duration_minutes,
+    allowedDurations: a.allowed_durations,
     allowedDurationsLabel: formatDurationsLabel(a.allowed_durations),
+    advanceBookingHours: a.advance_booking_hours,
     advanceBookingDaysLabel: formatAdvanceWindow(a.advance_booking_hours),
 
     maxActiveBookingsPerUser: a.max_bookings_per_user,

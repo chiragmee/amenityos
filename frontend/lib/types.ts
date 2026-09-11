@@ -16,11 +16,15 @@ export interface Amenity {
   active: boolean;
 
   workingHours: string;
+  workingHoursStart: string;
+  workingHoursEnd: string;
   availableDays: string;
   minDurationMins: number;
   maxDurationMins: number;
   defaultDurationMins: number;
+  allowedDurations: number[];
   allowedDurationsLabel: string;
+  advanceBookingHours: number;
   advanceBookingDaysLabel: string;
 
   maxActiveBookingsPerUser: number;

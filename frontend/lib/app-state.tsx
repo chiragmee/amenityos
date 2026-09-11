@@ -36,8 +36,6 @@ interface AppState {
   findAmenity: (id: string) => Amenity | undefined;
   refresh: () => Promise<void>;
   createRealBooking: (input: CreateBookingInput) => Promise<Booking>;
-  pendingPrefill: string | null;
-  setPendingPrefill: (text: string | null) => void;
 }
 
 const AppStateContext = createContext<AppState | null>(null);
@@ -68,7 +66,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [rawBookings, setRawBookings] = useState<BackendBooking[]>([]);
   const [rawCredits, setRawCredits] = useState<BackendCredits | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [pendingPrefill, setPendingPrefill] = useState<string | null>(null);
 
   const amenitiesById = useMemo(
     () => new Map(rawAmenities.map((a) => [a.id, a])),
@@ -169,8 +166,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     findAmenity,
     refresh: load,
     createRealBooking,
-    pendingPrefill,
-    setPendingPrefill,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

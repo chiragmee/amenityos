@@ -1,7 +1,4 @@
-"use client";
-
-import { useRouter } from "next/navigation";
-import { useAppState } from "@/lib/app-state";
+import Link from "next/link";
 import type { Amenity } from "@/lib/types";
 
 function priceLabel(a: Amenity) {
@@ -9,15 +6,6 @@ function priceLabel(a: Amenity) {
 }
 
 export function AmenityCard({ amenity }: { amenity: Amenity }) {
-  const router = useRouter();
-  const { setPendingPrefill } = useAppState();
-
-  const handleBook = () => {
-    const text = `Book ${amenity.name} today at 3 PM for ${Math.min(5, amenity.capacity)} people`;
-    setPendingPrefill(text);
-    router.push("/");
-  };
-
   return (
     <div className="bg-surface border border-border rounded-2xl overflow-hidden flex flex-col transition-[border-color,transform,box-shadow] hover:border-text-disabled hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(34,38,43,.08)]">
       <div
@@ -50,12 +38,12 @@ export function AmenityCard({ amenity }: { amenity: Amenity }) {
           Capacity {amenity.capacity}
         </div>
         <div className="flex-1" />
-        <button
-          onClick={handleBook}
+        <Link
+          href={`/amenities/${amenity.id}`}
           className="mt-4 border border-border bg-surface text-text-primary rounded-full px-3 py-[9px] text-[13px] font-medium w-full text-center hover:bg-brand hover:text-white hover:border-brand"
         >
           Book
-        </button>
+        </Link>
       </div>
     </div>
   );
