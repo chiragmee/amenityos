@@ -1,5 +1,6 @@
 import type {
   BackendAccessVerify,
+  BackendAgentChatResponse,
   BackendAmenity,
   BackendAmenityPolicy,
   BackendAvailability,
@@ -131,6 +132,13 @@ export function verifyAccess(token: string) {
   return request<BackendAccessVerify>("/access/verify", {
     method: "POST",
     body: JSON.stringify({ token }),
+  });
+}
+
+export function agentChat(payload: { session_id: string | null; user_id: string; message: string }) {
+  return request<BackendAgentChatResponse>("/agent/chat", {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }
 

@@ -1,307 +1,127 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import * as api from "./api-client";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CURRENT_USER_ID } from "./api-client";
 import { useAppState } from "./app-state";
-import { toBackendIso } from "./backend-time";
-import type { ScenarioKey } from "./types";
+import type { Booking, ScenarioKey } from "./types";
 
-export interface UIOption {
-  name: string;
-  detail: string;
-  tag: string;
-  pick: () => void;
+export interface ChatTurn {
+  role: "user" | "agent";
+  text: string;
 }
 
-export interface UIAction {
+interface ScenarioDef {
+  key: ScenarioKey;
   label: string;
-  kind: "primary" | "secondary";
-  run: () => void;
+  userId: string;
+  opener: string;
+  note?: string;
 }
 
-export interface UITurn {
-  user: string;
-  agent: string;
-  optionsTitle: string;
-  options: UIOption[];
-  actions: UIAction[];
-  resultTitle: string | null;
-  resultBody: string | null;
-  blockTitle: string | null;
-  blockBody: string | null;
-  trace: string;
-}
-
-type Outcome =
-  | { kind: "idle" }
-  | { kind: "loading" }
-  | { kind: "success"; title: string; body: string }
-  | { kind: "error"; title: string; body: string };
-
-export const scenarioLabels: { key: ScenarioKey; label: string }[] = [
-  { key: "unavailable", label: "Slot unavailable" },
-  { key: "paid", label: "Paid amenity" },
-  { key: "low", label: "Insufficient credits" },
-  { key: "capacity", label: "Capacity exceeded" },
+/** Openers reuse the exact wording verified against the live agent for each
+ * golden scenario in docs/19 — same sentences, real backend, real model. */
+const SCENARIOS: ScenarioDef[] = [
+  {
+    key: "unavailable",
+    label: "Slot unavailable",
+    userId: CURRENT_USER_ID,
+    opener: "Book Emerald Meeting Room for tomorrow from 3pm to 4pm.",
+  },
+  {
+    key: "paid",
+    label: "Paid amenity",
+    userId: CURRENT_USER_ID,
+    opener: "Book the gym for tomorrow at 6pm.",
+  },
+  {
+    key: "low",
+    label: "Insufficient credits",
+    userId: "usr_rahul",
+    opener: "Book the gym for tomorrow at 7am.",
+    note: "Demo user: Rahul (low credit balance)",
+  },
+  {
+    key: "capacity",
+    label: "Capacity exceeded",
+    userId: CURRENT_USER_ID,
+    opener: "Book Ruby Meeting Room for tomorrow at 10am for 8 people.",
+  },
 ];
 
-const TRACES: Record<ScenarioKey, string> = {
-  unavailable: "live availability checked · real conflict detection",
-  paid: "eligibility + credit balance checked against the real ledger",
-  low: "real credit check against a low-balance demo user (Rahul)",
-  capacity: "real capacity rule enforced by the backend",
-};
-
-/** Next occurrence of `hour` at least 5 minutes out. */
-function nextSlot(hour: number): Date {
-  const now = new Date();
-  const candidate = new Date(now);
-  candidate.setHours(hour, 0, 0, 0);
-  if (candidate.getTime() <= now.getTime() + 5 * 60 * 1000) {
-    candidate.setDate(candidate.getDate() + 1);
-  }
-  return candidate;
-}
-
-function errorMessage(err: unknown): string {
-  return err instanceof api.ApiError ? err.message : "Something went wrong.";
-}
+export const scenarioLabels: { key: ScenarioKey; label: string }[] = SCENARIOS.map((s) => ({
+  key: s.key,
+  label: s.label,
+}));
 
 export function useAssistantScenario() {
-  const { createRealBooking } = useAppState();
-  const [scenario, setScenario] = useState<ScenarioKey>("unavailable");
+  const { sendAgentMessage } = useAppState();
+  const [scenario, setScenario] = useState<ScenarioKey>(SCENARIOS[0].key);
+  const [turns, setTurns] = useState<ChatTurn[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [booking, setBooking] = useState<Booking | null>(null);
+  const [reply, setReply] = useState("");
+  const sessionIdRef = useRef<string | null>(null);
+  const userIdRef = useRef<string>(CURRENT_USER_ID);
 
-  const [unavailableOutcome, setUnavailableOutcome] = useState<Outcome>({ kind: "idle" });
-  const [paidState, setPaidState] = useState<"ask" | "cancelled">("ask");
-  const [paidOutcome, setPaidOutcome] = useState<Outcome>({ kind: "idle" });
-  const [capacityOutcome, setCapacityOutcome] = useState<Outcome>({ kind: "idle" });
-
-  const [lowResult, setLowResult] = useState<api.ApiError | { balance: number } | "loading" | null>(
-    null
+  const send = useCallback(
+    async (userId: string, text: string) => {
+      setTurns((t) => [...t, { role: "user", text }]);
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await sendAgentMessage(sessionIdRef.current, text, userId);
+        sessionIdRef.current = result.sessionId;
+        setTurns((t) => [...t, { role: "agent", text: result.message }]);
+        if (result.booking) setBooking(result.booking);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Something went wrong.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [sendAgentMessage]
   );
-  const [lowSent, setLowSent] = useState(false);
 
-  const selectScenario = useCallback((key: ScenarioKey) => {
-    setScenario(key);
-    setUnavailableOutcome({ kind: "idle" });
-    setPaidState("ask");
-    setPaidOutcome({ kind: "idle" });
-    setCapacityOutcome({ kind: "idle" });
-    setLowResult(null);
-    setLowSent(false);
+  const selectScenario = useCallback(
+    (key: ScenarioKey) => {
+      const def = SCENARIOS.find((s) => s.key === key)!;
+      setScenario(key);
+      setTurns([]);
+      setBooking(null);
+      setError(null);
+      setReply("");
+      sessionIdRef.current = null;
+      userIdRef.current = def.userId;
+      send(def.userId, def.opener);
+    },
+    [send]
+  );
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    selectScenario(SCENARIOS[0].key);
   }, []);
 
-  // "Insufficient credits" is real, but only true for the low-balance demo
-  // user (Rahul) — fetch that real check once when the scenario is opened.
-  useEffect(() => {
-    if (scenario !== "low" || lowResult !== null) return;
-    setLowResult("loading");
-    api
-      .validateBooking({
-        user_id: "usr_rahul",
-        amenity_id: "amenity_gym",
-        start_time: toBackendIso(nextSlot(18)),
-        duration_minutes: 60,
-        attendee_count: 1,
-      })
-      .then((r) => setLowResult({ balance: r.current_balance }))
-      .catch((err) => setLowResult(err instanceof api.ApiError ? err : new api.ApiError("UNKNOWN", errorMessage(err), 0)));
-  }, [scenario, lowResult]);
+  const sendReply = useCallback(() => {
+    const t = reply.trim();
+    if (!t || loading) return;
+    setReply("");
+    send(userIdRef.current, t);
+  }, [reply, loading, send]);
 
-  const bookUnavailableOption = useCallback(
-    async (amenityId: string, hour: number, label: string) => {
-      setUnavailableOutcome({ kind: "loading" });
-      try {
-        const booking = await createRealBooking({
-          amenityId,
-          startTime: nextSlot(hour),
-          durationMinutes: 60,
-          attendeeCount: 2,
-        });
-        setUnavailableOutcome({
-          kind: "success",
-          title: "Booking confirmed.",
-          body: `${label}\nBooking ID ${booking.displayId} · access pass issued.`,
-        });
-      } catch (err) {
-        setUnavailableOutcome({ kind: "error", title: "Booking failed", body: errorMessage(err) });
-      }
-    },
-    [createRealBooking]
-  );
+  const currentNote = SCENARIOS.find((s) => s.key === scenario)?.note ?? null;
 
-  const confirmPaidBooking = useCallback(async () => {
-    setPaidOutcome({ kind: "loading" });
-    try {
-      const booking = await createRealBooking({
-        amenityId: "amenity_gym",
-        startTime: nextSlot(18),
-        durationMinutes: 60,
-        attendeeCount: 1,
-      });
-      setPaidOutcome({
-        kind: "success",
-        title: "Booking confirmed.",
-        body: `${booking.costCredits} credits deducted.\nBooking ID ${booking.displayId} · access pass issued.`,
-      });
-    } catch (err) {
-      setPaidOutcome({ kind: "error", title: "Booking failed", body: errorMessage(err) });
-    }
-  }, [createRealBooking]);
-
-  const bookCapacityOption = useCallback(
-    async (amenityId: string, label: string, attendeeCount: number) => {
-      setCapacityOutcome({ kind: "loading" });
-      try {
-        const booking = await createRealBooking({
-          amenityId,
-          startTime: nextSlot(15),
-          durationMinutes: 60,
-          attendeeCount,
-        });
-        setCapacityOutcome({
-          kind: "success",
-          title: "Booking confirmed.",
-          body: `${label}\nBooking ID ${booking.displayId} · access pass issued.`,
-        });
-      } catch (err) {
-        setCapacityOutcome({ kind: "error", title: "Couldn't book that room", body: errorMessage(err) });
-      }
-    },
-    [createRealBooking]
-  );
-
-  const turn: UITurn = (() => {
-    const trace = TRACES[scenario];
-
-    if (scenario === "unavailable") {
-      const outcome = unavailableOutcome;
-      const options = [
-        { name: "Emerald", detail: "4:00–5:00 PM", tag: "AVAILABLE", target: ["amenity_emerald", 16] as const },
-        { name: "Emerald", detail: "2:00–3:00 PM", tag: "AVAILABLE", target: ["amenity_emerald", 14] as const },
-        { name: "Sapphire", detail: "3:00–4:00 PM", tag: "AVAILABLE", target: ["amenity_sapphire", 15] as const },
-      ];
-      return {
-        user: "Book Emerald at 3 PM for one hour.",
-        agent:
-          outcome.kind === "success"
-            ? "Emerald was unavailable at 3 PM. I booked the next valid slot instead."
-            : "Emerald is unavailable at 3 PM.",
-        optionsTitle: "VALID ALTERNATIVES",
-        options:
-          outcome.kind === "success" || outcome.kind === "loading"
-            ? []
-            : options.map((o) => ({
-                name: o.name,
-                detail: o.detail,
-                tag: o.tag,
-                pick: () => bookUnavailableOption(o.target[0], o.target[1], `${o.name} · ${o.detail}`),
-              })),
-        actions: [],
-        resultTitle: outcome.kind === "success" ? outcome.title : null,
-        resultBody: outcome.kind === "success" ? outcome.body : null,
-        blockTitle: outcome.kind === "error" ? outcome.title : null,
-        blockBody: outcome.kind === "error" ? outcome.body : null,
-        trace,
-      };
-    }
-
-    if (scenario === "paid") {
-      const outcome = paidOutcome;
-      const agent =
-        paidState === "cancelled"
-          ? "No problem — nothing was booked and no credits were used."
-          : outcome.kind === "success"
-            ? "The gym is booked for 6:00–7:00 PM."
-            : "The gym is available from 6:00–7:00 PM.\nThis booking costs 10 credits.\nWould you like me to confirm?";
-      return {
-        user: "Book the gym at 6 PM.",
-        agent,
-        optionsTitle: "",
-        options: [],
-        actions:
-          paidState === "ask" && outcome.kind !== "success"
-            ? [
-                {
-                  label: outcome.kind === "loading" ? "Confirming…" : "Confirm booking",
-                  kind: "primary",
-                  run: confirmPaidBooking,
-                },
-                { label: "Cancel", kind: "secondary", run: () => setPaidState("cancelled") },
-              ]
-            : [],
-        resultTitle: outcome.kind === "success" ? outcome.title : null,
-        resultBody: outcome.kind === "success" ? outcome.body : null,
-        blockTitle: outcome.kind === "error" ? outcome.title : null,
-        blockBody: outcome.kind === "error" ? outcome.body : null,
-        trace,
-      };
-    }
-
-    if (scenario === "low") {
-      const isError = lowResult instanceof api.ApiError;
-      const balance = isError ? undefined : (lowResult as { balance: number } | null)?.balance;
-      return {
-        user: "Book the gym at 6 PM. (as Rahul, a demo user with a low balance)",
-        agent:
-          lowResult === "loading" || lowResult === null
-            ? "Checking your credit balance…"
-            : isError
-              ? lowResult.message
-              : "The gym costs 10 credits — that request would go through.",
-        optionsTitle: "",
-        options: [],
-        actions:
-          isError && !lowSent
-            ? [{ label: "Contact admin", kind: "primary", run: () => setLowSent(true) }]
-            : [],
-        resultTitle: lowSent ? "Request sent to workplace admin." : null,
-        resultBody: lowSent
-          ? "An admin will review this credit top-up request. You will be notified in nookly. (This is a UI placeholder — there's no backend endpoint for admin notifications yet.)"
-          : null,
-        blockTitle: isError && !lowSent ? "This booking cannot be completed." : null,
-        blockBody:
-          isError && !lowSent
-            ? `${lowResult.message}${balance !== undefined ? ` (balance: ${balance})` : ""}`
-            : null,
-        trace,
-      };
-    }
-
-    // capacity
-    const outcome = capacityOutcome;
-    return {
-      user: "Book the Ruby meeting room for 8 people.",
-      agent:
-        outcome.kind === "success"
-          ? "Ruby Meeting Room has a capacity of 4. I moved your request to a larger room."
-          : "Ruby Meeting Room has a capacity of 4.\nI can check larger rooms at the same time.",
-      optionsTitle: "ROOMS THAT FIT 8",
-      options:
-        outcome.kind === "success" || outcome.kind === "loading"
-          ? []
-          : [
-              {
-                name: "Emerald",
-                detail: "Floor 8 · capacity 6",
-                tag: "TOO SMALL BY 2",
-                pick: () => bookCapacityOption("amenity_emerald", "Emerald · capacity 6", 8),
-              },
-              {
-                name: "Sapphire",
-                detail: "Floor 8 · capacity 10",
-                tag: "FITS 8",
-                pick: () => bookCapacityOption("amenity_sapphire", "Sapphire · capacity 10", 8),
-              },
-            ],
-      actions: [],
-      resultTitle: outcome.kind === "success" ? outcome.title : null,
-      resultBody: outcome.kind === "success" ? outcome.body : null,
-      blockTitle: outcome.kind === "error" ? outcome.title : null,
-      blockBody: outcome.kind === "error" ? outcome.body : null,
-      trace,
-    };
-  })();
-
-  return { scenario, selectScenario, turn };
+  return {
+    scenario,
+    selectScenario,
+    turns,
+    loading,
+    error,
+    booking,
+    reply,
+    setReply,
+    sendReply,
+    note: currentNote,
+  };
 }

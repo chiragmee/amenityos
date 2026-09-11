@@ -102,3 +102,9 @@ export interface BackendAccessVerify {
 export interface BackendErrorBody {
   error: { code: string; message: string };
 }
+
+export interface BackendAgentChatResponse {
+  session_id: string;
+  message: string;
+  booking: { id: string; access_token: string | null } | null;
+}

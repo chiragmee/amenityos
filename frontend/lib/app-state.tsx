@@ -22,6 +22,12 @@ interface CreateBookingInput {
   attendeeCount: number;
 }
 
+interface AgentTurnResult {
+  sessionId: string;
+  message: string;
+  booking: Booking | null;
+}
+
 interface AppState {
   loading: boolean;
   loadError: string | null;
@@ -36,6 +42,11 @@ interface AppState {
   findAmenity: (id: string) => Amenity | undefined;
   refresh: () => Promise<void>;
   createRealBooking: (input: CreateBookingInput) => Promise<Booking>;
+  sendAgentMessage: (
+    sessionId: string | null,
+    message: string,
+    userId?: string
+  ) => Promise<AgentTurnResult>;
 }
 
 const AppStateContext = createContext<AppState | null>(null);
@@ -152,6 +163,24 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [load, amenitiesById]
   );
 
+  const sendAgentMessage = useCallback(
+    async (sessionId: string | null, message: string, userId?: string) => {
+      const result = await api.agentChat({
+        session_id: sessionId,
+        user_id: userId ?? api.CURRENT_USER_ID,
+        message,
+      });
+      let booking: Booking | null = null;
+      if (result.booking) {
+        const raw = await api.getBooking(result.booking.id);
+        booking = mapBooking(raw, amenitiesById);
+        await load();
+      }
+      return { sessionId: result.session_id, message: result.message, booking };
+    },
+    [load, amenitiesById]
+  );
+
   const value: AppState = {
     loading,
     loadError,
@@ -166,6 +195,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     findAmenity,
     refresh: load,
     createRealBooking,
+    sendAgentMessage,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

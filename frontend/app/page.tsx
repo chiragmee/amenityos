@@ -10,38 +10,21 @@ import { BookingConfirmCard } from "@/components/home/booking-confirm-card";
 import { UpcomingBookingCard } from "@/components/home/upcoming-booking-card";
 import type { Booking } from "@/lib/types";
 
-const DEMO_AMENITY_ID = "amenity_emerald";
-const DEMO_HOUR = 15; // 3 PM
-const DEMO_DURATION_MINUTES = 60;
-const DEMO_ATTENDEES = 5;
-
-/** Next occurrence of `hour` at least 5 minutes out, so the canned demo
- * request never lands in the past regardless of when it's run. */
-function nextSlot(hour: number): Date {
-  const now = new Date();
-  const candidate = new Date(now);
-  candidate.setHours(hour, 0, 0, 0);
-  if (candidate.getTime() <= now.getTime() + 5 * 60 * 1000) {
-    candidate.setDate(candidate.getDate() + 1);
-  }
-  return candidate;
-}
-
 export default function HomePage() {
-  const { user, upcomingBookings, createRealBooking } = useAppState();
+  const { user, upcomingBookings, sendAgentMessage } = useAppState();
   const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
-  const slotRef = useRef<Date | null>(null);
+  const [reply, setReply] = useState("");
+  const sessionIdRef = useRef<string | null>(null);
 
-  const handleDone = useCallback(async () => {
-    const slot = slotRef.current ?? nextSlot(DEMO_HOUR);
-    const booking = await createRealBooking({
-      amenityId: DEMO_AMENITY_ID,
-      startTime: slot,
-      durationMinutes: DEMO_DURATION_MINUTES,
-      attendeeCount: DEMO_ATTENDEES,
-    });
-    setConfirmedBooking(booking);
-  }, [createRealBooking]);
+  const handleSend = useCallback(
+    async (text: string) => {
+      const result = await sendAgentMessage(sessionIdRef.current, text);
+      sessionIdRef.current = result.sessionId;
+      if (result.booking) setConfirmedBooking(result.booking);
+      return { message: result.message, booking: result.booking };
+    },
+    [sendAgentMessage]
+  );
 
   const {
     voice,
@@ -49,34 +32,33 @@ export default function HomePage() {
     transcript,
     typed,
     setTyped,
+    agentMessage,
     errorMessage,
     startVoice,
     resetVoice,
     sendTyped,
-  } = useVoiceFlow(handleDone);
+    sendReply,
+  } = useVoiceFlow(handleSend);
 
   const vIdle = voice === "idle";
   const vListen = voice === "listening";
-  const vAfter = voice === "processing" || voice === "done" || voice === "error";
+  const vAfter =
+    voice === "processing" || voice === "done" || voice === "needs-reply" || voice === "error";
   const vDone = voice === "done";
+  const vNeedsReply = voice === "needs-reply";
   const vError = voice === "error";
 
   const handleAskAgain = () => {
-    slotRef.current = null;
+    sessionIdRef.current = null;
+    setReply("");
     resetVoice();
     setConfirmedBooking(null);
   };
 
-  const handleStartVoice = () => {
-    slotRef.current = nextSlot(DEMO_HOUR);
-    startVoice();
-  };
-
-  const handleSendTyped = () => {
-    // No NLU yet — whatever's typed is echoed as "what you said", but the
-    // real request created is always this fixed demo slot.
-    slotRef.current = nextSlot(DEMO_HOUR);
-    sendTyped();
+  const handleSendReply = () => {
+    if (!reply.trim()) return;
+    sendReply(reply);
+    setReply("");
   };
 
   return (
@@ -95,14 +77,14 @@ export default function HomePage() {
                   value={typed}
                   onChange={(e) => setTyped(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && typed.trim()) handleSendTyped();
+                    if (e.key === "Enter" && typed.trim()) sendTyped();
                   }}
                   placeholder="Tell nookly what you need"
                   className="flex-1 min-w-0 bg-transparent text-[15px] text-text-primary placeholder:text-text-disabled outline-none py-1"
                 />
                 {typed.trim() ? (
                   <button
-                    onClick={handleSendTyped}
+                    onClick={sendTyped}
                     className="shrink-0 border-0 bg-brand text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-brand-dark transition-colors"
                     aria-label="Send"
                   >
@@ -110,7 +92,7 @@ export default function HomePage() {
                   </button>
                 ) : (
                   <button
-                    onClick={handleStartVoice}
+                    onClick={startVoice}
                     className="shrink-0 border-0 bg-transparent text-text-secondary rounded-full w-10 h-10 flex items-center justify-center hover:bg-border-subtle transition-colors"
                     aria-label="Speak instead"
                     title="Speak instead"
@@ -169,7 +151,7 @@ export default function HomePage() {
                     ✓
                   </span>
                   <div className="text-lg font-semibold tracking-[-0.2px] text-text-primary">
-                    You&apos;re booked.
+                    {agentMessage ?? "You're booked."}
                   </div>
                   <div className="flex-1" />
                   <button
@@ -181,10 +163,44 @@ export default function HomePage() {
                 </div>
               )}
 
+              {vNeedsReply && (
+                <div className="mt-5 border border-border bg-surface-subtle rounded-[16px] px-5 py-4 animate-rise">
+                  <div className="text-[12px] text-text-disabled">nookly</div>
+                  <div className="mt-1 text-[14.5px] text-text-primary leading-[1.55]">
+                    {agentMessage}
+                  </div>
+                  <div className="mt-3 flex items-center gap-2">
+                    <input
+                      value={reply}
+                      onChange={(e) => setReply(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && reply.trim()) handleSendReply();
+                      }}
+                      placeholder="Reply to nookly"
+                      className="flex-1 min-w-0 border border-border rounded-full bg-surface px-4 py-2 text-[14px] text-text-primary placeholder:text-text-disabled outline-none focus:border-brand"
+                    />
+                    <button
+                      onClick={handleSendReply}
+                      disabled={!reply.trim()}
+                      className="shrink-0 border-0 bg-brand text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-brand-dark transition-colors disabled:opacity-40"
+                      aria-label="Send reply"
+                    >
+                      →
+                    </button>
+                  </div>
+                  <button
+                    onClick={handleAskAgain}
+                    className="mt-3 border border-border bg-surface text-text-secondary rounded-full px-4 py-2 text-[12.5px] hover:border-text-disabled hover:text-text-primary"
+                  >
+                    Start over
+                  </button>
+                </div>
+              )}
+
               {vError && (
                 <div className="mt-5 border border-danger-border-tint bg-danger-tint rounded-[16px] px-5 py-4">
                   <div className="text-[14.5px] font-semibold text-danger-dark">
-                    That booking didn&apos;t go through.
+                    That didn&apos;t go through.
                   </div>
                   <div className="mt-1 text-[13.5px] text-danger-dark leading-[1.55]">
                     {errorMessage}
