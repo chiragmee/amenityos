@@ -4,6 +4,12 @@ One line per change: what + why + files touched. Newest entries at the top.
 
 ---
 
+**2026-09-12** — Documented the complete AI strategy in the README, at the user's request, so anyone reading the repo can understand how the agent/RAG/voice/eval layers were actually built and verified — not just that they exist. Also fixed both READMEs' stale "specified, not yet implemented" framing (left over from before Phases A-D shipped). New root-README section covers: the translation-layer design principle, build ordering rationale, a table of 5 real model/SDK/infra assumptions that turned out wrong on empirical testing (with what replaced each), why identity args are bound server-side instead of trusted to the prompt (with the real cross-user access gap this caught), a table of the actual eval parameters checked with targets and real examples each one caught, the observability design, and a closing checklist for reusing the approach elsewhere.
+Why: user asked explicitly for the AI strategy to be written up and pushed so others could learn from the real decisions and examples, not just the current state.
+Files: `README.md`, `backend/README.md`
+
+---
+
 **2026-09-12** — Fixed a second, different cause of slow transcription after the user reported it was "still" slow post-Gemini-swap. Root cause this time: a real transient 503 from `gemini-flash-lite-latest`, compounded by the `google-genai` SDK's default retry policy (5 attempts, exponential backoff up to 60s) — confirmed in production logs, a single transcription call hung ~57s entirely inside the SDK's own internal retry loop before ever reaching this app's code. Worse, this client is shared with the chat orchestrator, which has its own outer retry loop (`_send_with_retry`) — every chat turn was paying for two compounding retry layers on any transient error. Fixed at the shared client level (`gemini_client.py`): capped the SDK's own retries to 1 fast attempt via `http_options`, 20s per-call timeout — real retry/backoff decisions now happen only in this app's own visible code. Also gave voice transcription its own explicit 1-retry wrapper (it previously had zero resilience, unlike chat). Verified: normal latency unaffected (~0.7-1.3s), 25/25 tests pass.
 Why: real user-reported latency problem, found by reading production logs rather than re-guessing at CPU/model causes.
 Files: `backend/app/gemini_client.py`, `backend/app/voice/recognizer.py`
