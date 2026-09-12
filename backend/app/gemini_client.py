@@ -21,7 +21,20 @@ genuinely overloaded model returned its own `504 DEADLINE_EXCEEDED` after
 ~41s in production — i.e. Google's backend can still exceed the deadline
 you asked for before honoring it. Set to the API's minimum (10000ms) so a
 stuck first attempt fails and this app's own retry kicks in roughly twice
-as fast as it did at 20000ms."""
+as fast as it did at 20000ms.
+
+`retry_options.attempts` was left at 2 in an earlier pass and turned out
+to still be the same compounding-retry bug this docstring already
+describes, just one layer further down: the SDK's own retry sits
+*underneath* this app's own retry loops (orchestrator._send_with_retry,
+voice/recognizer.py's loop), so a single transient error could pay for
+up to 2 full ~10s SDK attempts *per app-level attempt* — confirmed in
+production logs (2026-09-12) as chained `httpx.ReadTimeout`s inside the
+SDK's own tenacity retry, producing 24-52s single-turn chat latency and
+40s+ voice-transcription hangs even though each individual layer looked
+reasonable in isolation. Set to 1 (no SDK-level retry) so there is
+exactly one retry decision-maker per call site, matching this file's own
+stated principle below."""
 
 import os
 
@@ -43,7 +56,7 @@ def get_client() -> genai.Client:
             api_key=api_key,
             http_options=types.HttpOptions(
                 timeout=REQUEST_TIMEOUT_MS,
-                retry_options=types.HttpRetryOptions(attempts=2, initial_delay=0.5, max_delay=2.0),
+                retry_options=types.HttpRetryOptions(attempts=1, initial_delay=0.5, max_delay=2.0),
             ),
         )
     return _client
