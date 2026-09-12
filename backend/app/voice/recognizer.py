@@ -20,6 +20,7 @@ import time
 from abc import ABC, abstractmethod
 from typing import BinaryIO
 
+import httpx
 from google.genai import errors as genai_errors
 from google.genai import types
 
@@ -67,7 +68,7 @@ class GeminiSpeechRecognizer(SpeechRecognizer):
                 )
                 text = (response.text or "").strip()
                 return "" if text == NO_SPEECH_SENTINEL else text
-            except (genai_errors.ServerError, genai_errors.ClientError) as exc:
+            except (genai_errors.ServerError, genai_errors.ClientError, httpx.RequestError) as exc:
                 last_error = exc
                 logger.warning("Gemini transcription error on attempt %d: %s", attempt + 1, exc)
                 if attempt < MAX_TRANSCRIBE_RETRIES:

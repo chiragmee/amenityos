@@ -14,6 +14,7 @@ import time
 import uuid
 from typing import Callable
 
+import httpx
 from google.genai import errors as genai_errors
 from google.genai import types
 from sqlmodel import Session, select
@@ -212,7 +213,15 @@ def _send_with_retry(chat, content) -> "types.GenerateContentResponse | None":
     ordinary bursty traffic (an eval run surfaced this — it wasn't only a
     theoretical case). Retry briefly on both; return None (caller falls
     back to a safe message) if it still fails — per docs/17-failure-modes.md's
-    LLM failure handling, never let this surface as a raw 500 to the user."""
+    LLM failure handling, never let this surface as a raw 500 to the user.
+
+    Also retry httpx.RequestError (timeouts, connection resets, etc.) —
+    these never got an HTTP response at all, so they raise as raw httpx
+    exceptions rather than genai_errors.ServerError/ClientError. Confirmed
+    in production (2026-09-12): a bare httpcore.ReadTimeout escaped this
+    function entirely and surfaced as an unhandled 500, once the shared
+    client's own SDK-level retry (gemini_client.py) stopped silently
+    absorbing these before they reached this code."""
     last_error = None
     for attempt in range(MAX_API_RETRIES + 1):
         try:
@@ -229,6 +238,11 @@ def _send_with_retry(chat, content) -> "types.GenerateContentResponse | None":
             logger.warning("Gemini rate-limited (429) on attempt %d: %s", attempt + 1, exc)
             if attempt < MAX_API_RETRIES:
                 time.sleep(RATE_LIMIT_BACKOFF_SECONDS)
+        except httpx.RequestError as exc:
+            last_error = exc
+            logger.warning("Gemini transport error on attempt %d: %s", attempt + 1, exc)
+            if attempt < MAX_API_RETRIES:
+                time.sleep(RETRY_BACKOFF_SECONDS * (attempt + 1))
     logger.error("Gemini unavailable after retries: %s", last_error)
     return None
 
