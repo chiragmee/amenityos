@@ -1,13 +1,18 @@
 # Nookly Backend
 
-The deterministic booking engine. No LLM, no RAG, no voice — those are
-specified in `../docs/` but deliberately not wired in yet. This proves the
-booking engine (validation + atomic paid-booking creation + idempotency)
-works correctly on its own before an agent sits in front of it.
+The deterministic booking engine (validation + atomic paid-booking
+creation + idempotency), plus the AI layers built on top of it: a
+Gemini-backed tool-calling agent (`app/agent/`), RAG policy retrieval
+(`app/rag/`), voice transcription (`app/voice/`), and observability +
+evaluation (`app/admin/`, `app/models.py::AgentTrace`, `eval/`). See the
+root `README.md`'s "AI Strategy" section for how and why each layer was
+built. The engine itself was built and tested completely on its own
+first — every agent tool is a thin wrapper over it, never new logic.
 
 ## Stack
 
-Python 3, FastAPI, SQLModel (SQLAlchemy + Pydantic), SQLite.
+Python 3, FastAPI, SQLModel (SQLAlchemy + Pydantic), SQLite locally /
+Postgres in production, Gemini API (`google-genai`), Qdrant (embedded).
 
 ## Setup
 
@@ -42,12 +47,15 @@ Interactive docs at `http://localhost:8000/docs`.
 python -m pytest -v
 ```
 
-14 tests against an isolated in-memory SQLite database (never touches
-`amenityos.db`): the 10 required scenarios (free booking, paid booking,
-insufficient credits, capacity violation, eligibility violation, outside
-working hours, invalid duration, conflicting booking, duplicate booking
-request, idempotent retry) plus 4 bonus cases (inactive amenity, user not
-found, tampered access token, validate/create parity).
+25 tests against an isolated in-memory SQLite database (never touches
+`amenityos.db`): the 10 required booking scenarios (free booking, paid
+booking, insufficient credits, capacity violation, eligibility violation,
+outside working hours, invalid duration, conflicting booking, duplicate
+booking request, idempotent retry), cancellation + refund logic, amenity
+CRUD, and other guardrail cases. Separately, `python -m eval.run_eval`
+runs a 29-case suite against the *live* Gemini agent (see the root
+README's AI Strategy section) — that one needs a running server and
+`GEMINI_API_KEY`, and is not part of the pytest suite.
 
 ## Deviations from `docs/14-api-contracts.md`
 
@@ -76,9 +84,9 @@ resolve doc/implementation disagreement explicitly rather than silently:
   doc sketched — needed a parseable shape for deterministic validation.
 - No overnight bookings: a booking must start and end on the same calendar
   day within the amenity's working hours.
-- `AgentSession` / `AgentMessage` tables exist (per the requested entity
-  list) but nothing writes to them yet — there's no agent loop until the
-  LLM is connected.
+- `AgentSession` / `AgentMessage` now persist every real agent conversation
+  (`app/agent/orchestrator.py`) — they were unused placeholders early in
+  the build, per the requested entity list, before the agent existed.
 - Access tokens are HMAC-signed opaque strings (`booking_id.signature`),
   not JWTs — no expiry claim baked in; expiry is checked against the
   booking's own `end_time` at verification time instead.
