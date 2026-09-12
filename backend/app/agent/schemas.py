@@ -14,7 +14,19 @@ class AgentBookingRef(BaseModel):
     access_token: Optional[str] = None
 
 
+class AgentOption(BaseModel):
+    label: str
+    value: str
+    detail: Optional[str] = None
+
+
+class AgentOptionsBlock(BaseModel):
+    kind: str
+    options: list[AgentOption]
+
+
 class AgentChatResponse(BaseModel):
     session_id: str
     message: str
     booking: Optional[AgentBookingRef] = None
+    options: Optional[AgentOptionsBlock] = None

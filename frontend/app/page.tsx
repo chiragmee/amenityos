@@ -1,18 +1,18 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAppState } from "@/lib/app-state";
 import { stepLabels, useVoiceFlow } from "@/lib/use-voice-flow";
 import { Waveform } from "@/components/home/waveform";
 import { StepChecklist } from "@/components/home/step-checklist";
-import { BookingConfirmCard } from "@/components/home/booking-confirm-card";
-import { UpcomingBookingCard } from "@/components/home/upcoming-booking-card";
-import type { Booking } from "@/lib/types";
+import { HomeBookingsPreview } from "@/components/home/home-bookings-preview";
+
+const SUCCESS_PAUSE_MS = 1200;
 
 export default function HomePage() {
-  const { user, upcomingBookings, sendAgentMessage } = useAppState();
-  const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
+  const router = useRouter();
+  const { user, sendAgentMessage } = useAppState();
   const [reply, setReply] = useState("");
   const sessionIdRef = useRef<string | null>(null);
 
@@ -20,10 +20,13 @@ export default function HomePage() {
     async (text: string) => {
       const result = await sendAgentMessage(sessionIdRef.current, text);
       sessionIdRef.current = result.sessionId;
-      if (result.booking) setConfirmedBooking(result.booking);
-      return { message: result.message, booking: result.booking };
+      if (result.booking) {
+        const bookingId = result.booking.id;
+        setTimeout(() => router.push(`/pass/${bookingId}`), SUCCESS_PAUSE_MS);
+      }
+      return { message: result.message, booking: result.booking, options: result.options };
     },
-    [sendAgentMessage]
+    [sendAgentMessage, router]
   );
 
   const {
@@ -33,6 +36,7 @@ export default function HomePage() {
     typed,
     setTyped,
     agentMessage,
+    agentOptions,
     errorMessage,
     startVoice,
     stopVoice,
@@ -53,7 +57,6 @@ export default function HomePage() {
     sessionIdRef.current = null;
     setReply("");
     resetVoice();
-    setConfirmedBooking(null);
   };
 
   const handleSendReply = () => {
@@ -165,13 +168,6 @@ export default function HomePage() {
                   <div className="text-lg font-semibold tracking-[-0.2px] text-text-primary">
                     {agentMessage ?? "You're booked."}
                   </div>
-                  <div className="flex-1" />
-                  <button
-                    onClick={handleAskAgain}
-                    className="border border-border bg-surface text-text-secondary rounded-full px-4 py-2 text-[12.5px] hover:border-text-disabled hover:text-text-primary"
-                  >
-                    Ask again
-                  </button>
                 </div>
               )}
 
@@ -181,6 +177,24 @@ export default function HomePage() {
                   <div className="mt-1 text-[14.5px] text-text-primary leading-[1.55]">
                     {agentMessage}
                   </div>
+
+                  {agentOptions && agentOptions.options.length > 0 && (
+                    <div className="mt-3 flex flex-col gap-2">
+                      {agentOptions.options.map((opt, i) => (
+                        <button
+                          key={i}
+                          onClick={() => sendReply(opt.value)}
+                          className="text-left border border-border bg-surface rounded-[12px] px-4 py-[10px] hover:border-brand hover:bg-brand-tint transition-colors"
+                        >
+                          <div className="text-[14px] font-medium text-text-primary">{opt.label}</div>
+                          {opt.detail && (
+                            <div className="mt-[2px] text-[12px] text-text-disabled">{opt.detail}</div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="mt-3 flex items-center gap-2">
                     <input
                       value={reply}
@@ -188,7 +202,7 @@ export default function HomePage() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && reply.trim()) handleSendReply();
                       }}
-                      placeholder="Reply to nookly"
+                      placeholder="Or reply to nookly"
                       className="flex-1 min-w-0 border border-border rounded-full bg-surface px-4 py-2 text-[14px] text-text-primary placeholder:text-text-disabled outline-none focus:border-brand"
                     />
                     <button
@@ -198,6 +212,27 @@ export default function HomePage() {
                       aria-label="Send reply"
                     >
                       →
+                    </button>
+                    <button
+                      onClick={startVoice}
+                      className="shrink-0 border border-border bg-surface text-text-secondary rounded-full w-10 h-10 flex items-center justify-center hover:bg-border-subtle transition-colors"
+                      aria-label="Speak your reply"
+                      title="Speak your reply"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"
+                          stroke="currentColor"
+                          strokeWidth="1.75"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          d="M19 11v1a7 7 0 0 1-14 0v-1M12 19v3"
+                          stroke="currentColor"
+                          strokeWidth="1.75"
+                          strokeLinecap="round"
+                        />
+                      </svg>
                     </button>
                   </div>
                   <button
@@ -230,32 +265,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {vDone && confirmedBooking && (
-        <BookingConfirmCard
-          booking={confirmedBooking}
-          onAskAgain={handleAskAgain}
-          onCancelled={() => setConfirmedBooking(null)}
-        />
-      )}
-
-      <div className="mt-11 flex items-baseline gap-3">
-        <h2 className="m-0 text-[17px] font-semibold tracking-[-0.2px] text-text-primary">
-          Upcoming bookings
-        </h2>
-        <Link href="/bookings" className="text-[12.5px] text-text-secondary hover:text-text-primary">
-          View all
-        </Link>
-      </div>
-      <div className="mt-[14px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]">
-        {upcomingBookings.length === 0 && (
-          <div className="text-sm text-text-disabled">
-            No quiet spaces booked yet. Try asking for one above.
-          </div>
-        )}
-        {upcomingBookings.slice(0, 3).map((b) => (
-          <UpcomingBookingCard key={b.id} booking={b} />
-        ))}
-      </div>
+      <HomeBookingsPreview />
     </section>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, transcribeAudio } from "./api-client";
+import type { BackendAgentOptionsBlock } from "./backend-types";
 
 export type VoiceState =
   | "idle"
@@ -15,6 +16,7 @@ export type VoiceState =
 export interface AgentTurnResult {
   message: string;
   booking: unknown | null;
+  options: BackendAgentOptionsBlock | null;
 }
 
 const STEP_DURATION_MS = 620;
@@ -40,6 +42,7 @@ export function useVoiceFlow(onSend: (text: string) => Promise<AgentTurnResult>)
   const [transcript, setTranscript] = useState(DEFAULT_TRANSCRIPT);
   const [typed, setTyped] = useState("");
   const [agentMessage, setAgentMessage] = useState<string | null>(null);
+  const [agentOptions, setAgentOptions] = useState<BackendAgentOptionsBlock | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -76,6 +79,7 @@ export function useVoiceFlow(onSend: (text: string) => Promise<AgentTurnResult>)
       setTranscript(text);
       setErrorMessage(null);
       setAgentMessage(null);
+      setAgentOptions(null);
       // "Thinking" indicator while the real agent call is in flight — see
       // the Phase A note this replaces: holds at the last step until the
       // response actually arrives, since latency is variable.
@@ -87,6 +91,7 @@ export function useVoiceFlow(onSend: (text: string) => Promise<AgentTurnResult>)
           clear();
           setStep(4);
           setAgentMessage(result.message);
+          setAgentOptions(result.options);
           setVoice(result.booking ? "done" : "needs-reply");
           if (spoken) speak(result.message);
         })
@@ -103,6 +108,7 @@ export function useVoiceFlow(onSend: (text: string) => Promise<AgentTurnResult>)
     clear();
     setErrorMessage(null);
     setAgentMessage(null);
+    setAgentOptions(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -147,6 +153,7 @@ export function useVoiceFlow(onSend: (text: string) => Promise<AgentTurnResult>)
     setStep(0);
     setTyped("");
     setAgentMessage(null);
+    setAgentOptions(null);
     setErrorMessage(null);
   }, [clear, stopStream]);
 
@@ -171,6 +178,7 @@ export function useVoiceFlow(onSend: (text: string) => Promise<AgentTurnResult>)
     typed,
     setTyped,
     agentMessage,
+    agentOptions,
     errorMessage,
     startVoice,
     stopVoice,

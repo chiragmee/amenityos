@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import * as api from "./api-client";
-import type { BackendAmenity, BackendBooking, BackendCredits } from "./backend-types";
+import type { BackendAgentOptionsBlock, BackendAmenity, BackendBooking, BackendCredits } from "./backend-types";
 import { parseBackendDate, toBackendIso } from "./backend-time";
 import { mapAmenity, mapBooking, mapLedgerEntry, mapUser } from "./map-backend";
 import type { Amenity, Booking, CreditLedgerEntry, User } from "./types";
@@ -26,6 +26,7 @@ interface AgentTurnResult {
   sessionId: string;
   message: string;
   booking: Booking | null;
+  options: BackendAgentOptionsBlock | null;
 }
 
 interface AppState {
@@ -186,7 +187,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         booking = mapBooking(raw, amenitiesById);
         await load();
       }
-      return { sessionId: result.session_id, message: result.message, booking };
+      return { sessionId: result.session_id, message: result.message, booking, options: result.options };
     },
     [load, amenitiesById]
   );

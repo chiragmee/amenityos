@@ -137,10 +137,22 @@ export interface BackendErrorBody {
   error: { code: string; message: string };
 }
 
+export interface BackendAgentOption {
+  label: string;
+  value: string;
+  detail: string | null;
+}
+
+export interface BackendAgentOptionsBlock {
+  kind: string;
+  options: BackendAgentOption[];
+}
+
 export interface BackendAgentChatResponse {
   session_id: string;
   message: string;
   booking: { id: string; access_token: string | null } | null;
+  options: BackendAgentOptionsBlock | null;
 }
 
 export interface BackendToolCall {

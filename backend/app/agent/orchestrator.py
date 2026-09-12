@@ -19,7 +19,7 @@ from google.genai import types
 from sqlmodel import Session, select
 
 from . import tools as agent_tools
-from .schemas import AgentBookingRef, AgentChatRequest, AgentChatResponse
+from .schemas import AgentBookingRef, AgentChatRequest, AgentChatResponse, AgentOption, AgentOptionsBlock
 from .system_prompt import build_system_instruction
 from ..gemini_client import get_client
 from ..models import AgentMessage, AgentMessageRole, AgentSession, AgentTrace, utcnow
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 # guidance to prefer the smaller model where quality allows. Revisit once
 # quality is actually measured (docs/11), not before.
 MODEL_NAME = "gemini-flash-lite-latest"
-MAX_TOOL_ROUNDS = 6
+MAX_TOOL_ROUNDS = 9
 MAX_API_RETRIES = 2
 RETRY_BACKOFF_SECONDS = 2
 
@@ -145,6 +145,23 @@ def _make_tool_functions(db: Session, caller_user_id: str) -> list[Callable]:
         """
         return agent_tools.generate_access_token(db, booking_id, caller_user_id)
 
+    def present_options(kind: str, options: list[dict]) -> dict:
+        """Present discrete choices to the user as tappable UI buttons, in
+        addition to describing them in your final response text. Call this
+        whenever the user must pick between specific, named alternatives —
+        which amenity, which time slot, or whether to confirm a paid
+        booking. Never call this for open-ended questions.
+
+        Args:
+            kind: What these options represent: "amenity", "time", or "confirmation".
+            options: 2 to 5 choices. Each item needs "label" (short button
+                text, e.g. "Emerald - 4:00-5:00 PM") and "value" (the exact
+                natural-language phrase to treat as the user's reply if they
+                tap this button, e.g. "Book Emerald at 4pm"). "detail" is
+                optional secondary text (e.g. "Capacity 6 - Tower A").
+        """
+        return {"acknowledged": True}
+
     return [
         get_user_profile,
         search_amenities,
@@ -155,6 +172,7 @@ def _make_tool_functions(db: Session, caller_user_id: str) -> list[Callable]:
         create_booking,
         get_booking,
         generate_access_token,
+        present_options,
     ]
 
 
@@ -256,6 +274,7 @@ def run_turn(db: Session, request: AgentChatRequest) -> AgentChatResponse:
 
     response = _send_with_retry(chat, request.message)
     booking_ref: AgentBookingRef | None = None
+    options_block: AgentOptionsBlock | None = None
     degraded = response is None
     if response is not None:
         _record_usage(response)
@@ -305,6 +324,25 @@ def run_turn(db: Session, request: AgentChatRequest) -> AgentChatResponse:
                 if call.name == "create_booking" and isinstance(result, dict) and result.get("success"):
                     token_result = functions_by_name["generate_access_token"](booking_id=result["booking_id"])
                     booking_ref = AgentBookingRef(id=result["booking_id"], access_token=token_result.get("token"))
+                    options_block = None  # a completed booking supersedes any earlier choice prompt
+
+                if call.name == "present_options":
+                    try:
+                        raw_options = (call.args or {}).get("options") or []
+                        options_block = AgentOptionsBlock(
+                            kind=(call.args or {}).get("kind", ""),
+                            options=[
+                                AgentOption(
+                                    label=o.get("label", ""),
+                                    value=o.get("value", o.get("label", "")),
+                                    detail=o.get("detail"),
+                                )
+                                for o in raw_options
+                                if isinstance(o, dict)
+                            ],
+                        )
+                    except Exception:
+                        logger.exception("Failed to parse present_options call args: %s", call.args)
 
                 parts.append(types.Part.from_function_response(name=call.name, response=result))
             response = _send_with_retry(chat, parts)
@@ -349,4 +387,6 @@ def run_turn(db: Session, request: AgentChatRequest) -> AgentChatResponse:
     )
     db.commit()
 
-    return AgentChatResponse(session_id=agent_session.id, message=final_text, booking=booking_ref)
+    return AgentChatResponse(
+        session_id=agent_session.id, message=final_text, booking=booking_ref, options=options_block
+    )
