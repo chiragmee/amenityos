@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAppState } from "@/lib/app-state";
 import { stepLabels, useVoiceFlow } from "@/lib/use-voice-flow";
@@ -118,8 +119,16 @@ export default function HomePage() {
                   </button>
                 )}
               </div>
-              <div className="mt-3 text-[13px] text-text-disabled">
-                A quiet room, a desk, the gym — just say or type it.
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="text-[13px] text-text-disabled">
+                  A quiet room, a desk, the gym — just say or type it.
+                </div>
+                <Link
+                  href="/amenities"
+                  className="shrink-0 border border-border bg-surface text-text-secondary rounded-full px-4 py-[7px] text-[12.5px] font-medium hover:border-text-disabled hover:text-text-primary transition-colors"
+                >
+                  Book Manually
+                </Link>
               </div>
             </div>
           )}

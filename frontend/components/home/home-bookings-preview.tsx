@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useAppState } from "@/lib/app-state";
 import { parseBackendDate } from "@/lib/backend-time";
 import type { Booking } from "@/lib/types";
@@ -9,7 +9,15 @@ import { UpcomingBookingCard } from "./upcoming-booking-card";
 
 const MAX_PREVIEW = 6;
 
-function classify(booking: Booking, nowMs: number): "active" | "upcoming" | "past" {
+type Section = "active" | "upcoming" | "past";
+
+const TABS: { key: Section; label: string }[] = [
+  { key: "active", label: "Active" },
+  { key: "upcoming", label: "Upcoming" },
+  { key: "past", label: "Past" },
+];
+
+function classify(booking: Booking, nowMs: number): Section {
   if (booking.status !== "confirmed") return "past";
   const start = parseBackendDate(booking.startTime).getTime();
   const end = parseBackendDate(booking.endTime).getTime();
@@ -18,32 +26,10 @@ function classify(booking: Booking, nowMs: number): "active" | "upcoming" | "pas
   return "past";
 }
 
-function Section({
-  title,
-  bookings,
-  section,
-}: {
-  title: string;
-  bookings: Booking[];
-  section: "active" | "upcoming" | "past";
-}) {
-  if (bookings.length === 0) return null;
-  return (
-    <div className="mt-5 first:mt-0">
-      <div className="text-[11px] tracking-[.08em] font-mono text-text-faint-2 mb-[10px]">{title}</div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]">
-        {bookings.map((b) => (
-          <UpcomingBookingCard key={b.id} booking={b} section={section} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function HomeBookingsPreview() {
   const { upcomingBookings, pastBookings } = useAppState();
 
-  const { activePreview, upcomingPreview, pastPreview, total } = useMemo(() => {
+  const { bySection, total } = useMemo(() => {
     const now = Date.now();
     const all = [...upcomingBookings, ...pastBookings];
 
@@ -61,17 +47,21 @@ export function HomeBookingsPreview() {
     upcoming.sort((a, b) => parseBackendDate(a.startTime).getTime() - parseBackendDate(b.startTime).getTime());
     past.sort((a, b) => parseBackendDate(b.endTime).getTime() - parseBackendDate(a.endTime).getTime());
 
-    // Priority order for the capped preview: active, then nearest upcoming, then most recent past.
-    const ordered = [...active, ...upcoming, ...past];
-    const previewIds = new Set(ordered.slice(0, MAX_PREVIEW).map((b) => b.id));
-
     return {
-      activePreview: active.filter((b) => previewIds.has(b.id)),
-      upcomingPreview: upcoming.filter((b) => previewIds.has(b.id)),
-      pastPreview: past.filter((b) => previewIds.has(b.id)),
+      bySection: {
+        active: active.slice(0, MAX_PREVIEW),
+        upcoming: upcoming.slice(0, MAX_PREVIEW),
+        past: past.slice(0, MAX_PREVIEW),
+      },
       total: all.length,
     };
   }, [upcomingBookings, pastBookings]);
+
+  const defaultTab: Section =
+    bySection.active.length > 0 ? "active" : bySection.upcoming.length > 0 ? "upcoming" : "past";
+  const [tab, setTab] = useState<Section>(defaultTab);
+
+  const current = bySection[tab];
 
   return (
     <>
@@ -88,9 +78,39 @@ export function HomeBookingsPreview() {
         </div>
       ) : (
         <div className="mt-[14px]">
-          <Section title="ACTIVE" bookings={activePreview} section="active" />
-          <Section title="UPCOMING" bookings={upcomingPreview} section="upcoming" />
-          <Section title="PAST" bookings={pastPreview} section="past" />
+          <div className="flex items-center gap-1 border-b border-border-subtle">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={
+                  t.key === tab
+                    ? "relative px-4 py-2 text-[13.5px] font-medium text-text-primary"
+                    : "relative px-4 py-2 text-[13.5px] text-text-secondary hover:text-text-primary transition-colors"
+                }
+              >
+                {t.label}
+                <span className="ml-[6px] text-[11.5px] text-text-disabled">{bySection[t.key].length}</span>
+                {t.key === tab && (
+                  <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-brand rounded-full" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {current.length === 0 ? (
+            <div className="mt-4 text-sm text-text-disabled">
+              {tab === "active" && "Nothing happening right now."}
+              {tab === "upcoming" && "Nothing coming up."}
+              {tab === "past" && "No past bookings yet."}
+            </div>
+          ) : (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]">
+              {current.map((b) => (
+                <UpcomingBookingCard key={b.id} booking={b} section={tab} />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </>

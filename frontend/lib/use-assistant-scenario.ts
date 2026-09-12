@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CURRENT_USER_ID } from "./api-client";
 import { useAppState } from "./app-state";
+import type { BackendAgentOptionsBlock } from "./backend-types";
 import type { Booking, ScenarioKey } from "./types";
 
 export interface ChatTurn {
   role: "user" | "agent";
   text: string;
+  options?: BackendAgentOptionsBlock | null;
 }
 
 interface ScenarioDef {
@@ -72,7 +74,7 @@ export function useAssistantScenario() {
       try {
         const result = await sendAgentMessage(sessionIdRef.current, text, userId);
         sessionIdRef.current = result.sessionId;
-        setTurns((t) => [...t, { role: "agent", text: result.message }]);
+        setTurns((t) => [...t, { role: "agent", text: result.message, options: result.options }]);
         if (result.booking) setBooking(result.booking);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -110,6 +112,14 @@ export function useAssistantScenario() {
     send(userIdRef.current, t);
   }, [reply, loading, send]);
 
+  const sendOption = useCallback(
+    (value: string) => {
+      if (loading) return;
+      send(userIdRef.current, value);
+    },
+    [loading, send]
+  );
+
   const currentNote = SCENARIOS.find((s) => s.key === scenario)?.note ?? null;
 
   return {
@@ -122,6 +132,7 @@ export function useAssistantScenario() {
     reply,
     setReply,
     sendReply,
+    sendOption,
     note: currentNote,
   };
 }

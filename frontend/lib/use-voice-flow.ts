@@ -48,6 +48,11 @@ export function useVoiceFlow(onSend: (text: string) => Promise<AgentTurnResult>)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  // Once a journey starts by voice, keep speaking every reply through to
+  // completion even if a later turn in the same journey is a tap/typed
+  // reply (e.g. voice -> agent offers room choices -> user taps one) --
+  // the user shouldn't have to keep talking to keep hearing responses.
+  const voiceOriginatedRef = useRef(false);
 
   const clear = useCallback(() => {
     timers.current.forEach(clearTimeout);
@@ -73,6 +78,7 @@ export function useVoiceFlow(onSend: (text: string) => Promise<AgentTurnResult>)
 
   const sendToAgent = useCallback(
     (text: string, spoken: boolean) => {
+      if (spoken) voiceOriginatedRef.current = true;
       clear();
       setVoice("processing");
       setStep(0);
@@ -93,7 +99,7 @@ export function useVoiceFlow(onSend: (text: string) => Promise<AgentTurnResult>)
           setAgentMessage(result.message);
           setAgentOptions(result.options);
           setVoice(result.booking ? "done" : "needs-reply");
-          if (spoken) speak(result.message);
+          if (voiceOriginatedRef.current) speak(result.message);
         })
         .catch((err: unknown) => {
           clear();
@@ -149,6 +155,7 @@ export function useVoiceFlow(onSend: (text: string) => Promise<AgentTurnResult>)
     clear();
     stopStream();
     mediaRecorderRef.current = null;
+    voiceOriginatedRef.current = false;
     setVoice("idle");
     setStep(0);
     setTyped("");

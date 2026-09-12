@@ -14,6 +14,7 @@ export default function AssistantPage() {
     reply,
     setReply,
     sendReply,
+    sendOption,
     note,
   } = useAssistantScenario();
 
@@ -59,8 +60,30 @@ export default function AssistantPage() {
                 <div className="w-[26px] h-[26px] shrink-0 rounded-[10px] bg-brand text-white flex items-center justify-center text-[11px] font-semibold">
                   A
                 </div>
-                <div className="min-w-0 flex-1 text-[15px] leading-[1.55] whitespace-pre-line pt-[3px]">
-                  {turn.text}
+                <div className="min-w-0 flex-1">
+                  <div className="text-[15px] leading-[1.55] whitespace-pre-line pt-[3px]">
+                    {turn.text}
+                  </div>
+                  {i === turns.length - 1 &&
+                    !loading &&
+                    !booking &&
+                    turn.options &&
+                    turn.options.options.length > 0 && (
+                      <div className="mt-3 flex flex-col gap-2 max-w-[420px]">
+                        {turn.options.options.map((opt, j) => (
+                          <button
+                            key={j}
+                            onClick={() => sendOption(opt.value)}
+                            className="text-left border border-border bg-surface rounded-[12px] px-4 py-[10px] hover:border-brand hover:bg-brand-tint transition-colors"
+                          >
+                            <div className="text-[14px] font-medium text-text-primary">{opt.label}</div>
+                            {opt.detail && (
+                              <div className="mt-[2px] text-[12px] text-text-disabled">{opt.detail}</div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                 </div>
               </div>
             )
