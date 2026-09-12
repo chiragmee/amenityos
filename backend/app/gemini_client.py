@@ -11,7 +11,17 @@ into multi-minute worst cases. Confirmed empirically (2026-09-12): a real
 "high demand" 503 on gemini-flash-lite-latest made a transcription
 request hang ~57s before failing, entirely inside the SDK's internal
 retry loop. Capped here to 1 fast retry — the application-level retry
-loops are where real backoff/logging/degradation decisions belong."""
+loops are where real backoff/logging/degradation decisions belong.
+
+`timeout` is a real, server-enforced per-call deadline (confirmed: Gemini
+rejects anything below 10000ms with "Manually set deadline Xs is too
+short. Minimum allowed deadline is 10s" — 10s is the API's own floor, not
+an arbitrary choice). Still not enough on its own: even at 20000ms, a
+genuinely overloaded model returned its own `504 DEADLINE_EXCEEDED` after
+~41s in production — i.e. Google's backend can still exceed the deadline
+you asked for before honoring it. Set to the API's minimum (10000ms) so a
+stuck first attempt fails and this app's own retry kicks in roughly twice
+as fast as it did at 20000ms."""
 
 import os
 
@@ -19,6 +29,8 @@ from google import genai
 from google.genai import types
 
 _client: genai.Client | None = None
+
+REQUEST_TIMEOUT_MS = 10000  # Gemini's own enforced floor — see docstring
 
 
 def get_client() -> genai.Client:
@@ -30,7 +42,7 @@ def get_client() -> genai.Client:
         _client = genai.Client(
             api_key=api_key,
             http_options=types.HttpOptions(
-                timeout=20000,
+                timeout=REQUEST_TIMEOUT_MS,
                 retry_options=types.HttpRetryOptions(attempts=2, initial_delay=0.5, max_delay=2.0),
             ),
         )
